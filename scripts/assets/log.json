@@ -1,0 +1,68 @@
+{
+  "spent": 9,
+  "rows": [
+    {
+      "id": "char/hero-down",
+      "path": "public/game/char/hero-down.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 1318,
+      "fill": 0.3496
+    },
+    {
+      "id": "mon/reactnative",
+      "path": "public/game/mon/reactnative.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 9604,
+      "fill": 0.6313
+    },
+    {
+      "id": "obj/tree",
+      "path": "public/game/obj/tree.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 3548,
+      "fill": 0.3657
+    },
+    {
+      "id": "obj/tree-small",
+      "path": "public/game/obj/tree-small.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 1732,
+      "fill": 0.6172
+    },
+    {
+      "id": "bg/battle-1",
+      "path": "public/game/bg/battle-1.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 24980,
+      "fill": 1
+    },
+    {
+      "id": "mon/react",
+      "path": "public/game/mon/react.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 6796,
+      "fill": 0.413
+    },
+    {
+      "id": "char/hero-down-2",
+      "path": "public/game/char/hero-down-2.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "derive",
+      "bytes": 1300,
+      "fill": 0.3444
+    }
+  ]
+}
