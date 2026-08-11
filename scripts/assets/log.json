@@ -1,5 +1,5 @@
 {
-  "spent": 94,
+  "spent": 107.5,
   "rows": [
     {
       "id": "char/hero-down",
@@ -35,33 +35,6 @@
       "model": "nano_banana_flash",
       "bytes": 2082,
       "fill": 0.6204
-    },
-    {
-      "id": "char/aing-up",
-      "path": "public/game/char/aing-up.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 2296,
-      "fill": 0.7357
-    },
-    {
-      "id": "char/prof-down",
-      "path": "public/game/char/prof-down.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 2466,
-      "fill": 0.6543
-    },
-    {
-      "id": "char/aing-side",
-      "path": "public/game/char/aing-side.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1930,
-      "fill": 0.5488
     },
     {
       "id": "char/npc-ace-down",
@@ -313,24 +286,6 @@
       "fill": 1
     },
     {
-      "id": "bg/battle-5",
-      "path": "public/game/bg/battle-5.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 25834,
-      "fill": 1
-    },
-    {
-      "id": "bg/battle-3",
-      "path": "public/game/bg/battle-3.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 19712,
-      "fill": 1
-    },
-    {
       "id": "bg/battle-4",
       "path": "public/game/bg/battle-4.webp",
       "ok": true,
@@ -382,24 +337,6 @@
       "model": "derive",
       "bytes": 1162,
       "fill": 0.2969
-    },
-    {
-      "id": "char/aing-up-2",
-      "path": "public/game/char/aing-up-2.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "derive",
-      "bytes": 2266,
-      "fill": 0.7253
-    },
-    {
-      "id": "char/aing-side-2",
-      "path": "public/game/char/aing-side-2.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "derive",
-      "bytes": 1914,
-      "fill": 0.5423
     },
     {
       "id": "obj/bld-house",
@@ -454,24 +391,6 @@
       "model": "repost",
       "bytes": 16450,
       "fill": 0.7096
-    },
-    {
-      "id": "obj/bld-tower",
-      "path": "public/game/obj/bld-tower.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 23094,
-      "fill": 0.6264
-    },
-    {
-      "id": "obj/bld-cafe",
-      "path": "public/game/obj/bld-cafe.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 8134,
-      "fill": 0.6854
     },
     {
       "id": "obj/tree-small",
@@ -573,13 +492,94 @@
       "fill": 0.5928
     },
     {
+      "id": "bg/battle-3",
+      "path": "public/game/bg/battle-3.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 25996,
+      "fill": 1
+    },
+    {
       "id": "obj/desk",
       "path": "public/game/obj/desk.webp",
       "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 2546,
+      "fill": 0.8101
+    },
+    {
+      "id": "bg/battle-5",
+      "path": "public/game/bg/battle-5.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 21100,
+      "fill": 1
+    },
+    {
+      "id": "obj/bld-cafe",
+      "path": "public/game/obj/bld-cafe.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 7700,
+      "fill": 0.821
+    },
+    {
+      "id": "obj/bld-tower",
+      "path": "public/game/obj/bld-tower.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 26302,
+      "fill": 0.9083
+    },
+    {
+      "id": "char/aing-up",
+      "path": "public/game/char/aing-up.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 1902,
+      "fill": 0.625
+    },
+    {
+      "id": "char/prof-down",
+      "path": "public/game/char/prof-down.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 2554,
+      "fill": 0.623
+    },
+    {
+      "id": "char/aing-side",
+      "path": "public/game/char/aing-side.webp",
+      "ok": true,
+      "attempts": 1,
+      "model": "nano_banana_flash",
+      "bytes": 2462,
+      "fill": 0.7044
+    },
+    {
+      "id": "char/aing-up-2",
+      "path": "public/game/char/aing-up-2.webp",
+      "ok": true,
       "attempts": 0,
-      "model": "repost",
-      "bytes": 1978,
-      "fill": 0.3989
+      "model": "derive",
+      "bytes": 1882,
+      "fill": 0.6178
+    },
+    {
+      "id": "char/aing-side-2",
+      "path": "public/game/char/aing-side-2.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "derive",
+      "bytes": 2432,
+      "fill": 0.696
     }
   ]
 }
