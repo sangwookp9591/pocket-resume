@@ -7,14 +7,13 @@ import { useEffect, useRef, useState, type ImgHTMLAttributes, type ReactNode } f
 import { MONS, TYPES, byId } from '../content/mons.ts';
 import { BADGES } from '../content/journey.ts';
 import { card } from '../lib/game/state.ts';
-import type { BadgeId, Face, GameState, TypeId } from '../content/types.ts';
+import type { BadgeId, GameState, TypeId } from '../content/types.ts';
 
 /* 아직 안 만들어진 에셋은 **깨진 이미지 아이콘 대신 아무것도** 보여 줍니다.
    onError에서 style을 만지면 리렌더에 되살아나므로 상태로 기억합니다. */
 export function PixelImg({ src, alt = '', ...rest }: ImgHTMLAttributes<HTMLImageElement>) {
   const [dead, setDead] = useState(false);
   if (dead) return null;
-  // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt={alt} onError={() => setDead(true)} {...rest} />;
 }
 
@@ -27,36 +26,33 @@ export function DialogueBox({ who, text, onNext, showNext = true, children }: {
   showNext?: boolean;
   children?: ReactNode;
 }) {
-  const [shown, setShown] = useState('');
   const full = text ?? '';
-  const doneRef = useRef(false);
+
+  /* 타자 효과. **몇 글자까지 찍혔는가가 상태**입니다 — ▼ 화살표가 그것으로 나타나므로
+     ref로 두면 렌더가 다시 안 돌아 화살표가 안 뜹니다.
+     대사가 바뀌면 렌더 중에 되돌립니다(React가 권하는 "props로 상태 조정" 패턴) —
+     effect에서 setState를 부르면 렌더가 한 번 더 돕니다. */
+  // prefers-reduced-motion이면 처음부터 다 찍힌 상태로 둡니다 — effect에서 다시 setState하면
+  // 렌더가 한 번 더 돕니다. 이 값은 렌더 중에 읽어도 안전한 매체 질의입니다.
+  const instant = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+  const [typed, setTyped] = useState(() => ({ full, n: instant ? full.length : 0 }));
+  if (typed.full !== full) setTyped({ full, n: instant ? full.length : 0 });
+  const shown = full.slice(0, typed.n);
+  const done = typed.n >= full.length;
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      setShown(full);
-      doneRef.current = true;
-      return;
-    }
-    setShown('');
-    doneRef.current = false;
-    let i = 0;
+    if (done) return;
+    // setState는 타이머 콜백 안에서만 부릅니다 — effect 본문에서 부르면 렌더가 연쇄합니다.
     const id = setInterval(() => {
-      i++;
-      setShown(full.slice(0, i));
-      if (i >= full.length) {
-        doneRef.current = true;
-        clearInterval(id);
-      }
+      setTyped((t) => (t.n >= t.full.length ? t : { ...t, n: t.n + 1 }));
     }, 22);
     return () => clearInterval(id);
-  }, [full]);
+  }, [done]);
 
   const advance = () => {
-    if (!doneRef.current) {
-      setShown(full);
-      doneRef.current = true;
-      return;
-    }
+    // 다 찍히기 전에 누르면 즉시 전부, 그 다음 누름이 다음 줄로.
+    if (!done) { setTyped((t) => ({ ...t, n: t.full.length })); return; }
     onNext?.();
   };
 
@@ -66,7 +62,7 @@ export function DialogueBox({ who, text, onNext, showNext = true, children }: {
       {who && <span className="dlg-who">{who}</span>}
       <p className="dlg-text">{shown}</p>
       {children}
-      {showNext && doneRef.current && <span className="dlg-next" aria-hidden>▼</span>}
+      {showNext && done && <span className="dlg-next" aria-hidden>▼</span>}
     </div>
   );
 }

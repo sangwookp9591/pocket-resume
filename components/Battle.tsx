@@ -32,7 +32,7 @@ export default function Battle({ spec, party, onEnd }: {
     }),
   );
   const [shown, setShown] = useState(0); // 몇 번째 로그까지 읽었나
-  const [mode, setMode] = useState('log'); // log | menu | moves | switch
+  const [mode, setMode] = useState<'log' | 'menu' | 'moves' | 'switch'>('log');
   const [cur, setCur] = useState(0);
   const endedRef = useRef(false);
 
@@ -61,23 +61,24 @@ export default function Battle({ spec, party, onEnd }: {
     return () => clearTimeout(t);
   }, [reading, st, onEnd]);
 
-  useEffect(() => {
-    if (mode !== 'log' || reading || st.over) return;
-    setMode('menu');
-  }, [mode, reading, st.over]);
+  /* 로그를 다 읽으면 메뉴로 — 이건 **파생값**이지 effect가 아닙니다.
+     effect에서 setMode를 부르면 렌더가 한 번 더 돕니다. */
+  const uiMode = mode === 'log' ? 'menu' : mode;
 
   const options = useMemo(() => {
-    if (mode === 'menu') return MENU.map(([k, label]) => ({ k, label, dim: false }));
-    if (mode === 'moves') return me.mon.moves.map((m, i) => ({ k: String(i), label: m, dim: false }));
-    if (mode === 'switch') {
+    if (uiMode === 'menu') return MENU.map(([k, label]) => ({ k, label, dim: false }));
+    if (uiMode === 'moves') return me.mon.moves.map((m, i) => ({ k: String(i), label: m, dim: false }));
+    if (uiMode === 'switch') {
       return st.party.map((u, i) => ({
         k: String(i), label: `${u.mon.name} Lv.${u.level} (${u.hp}/${u.maxHp})`, dim: u.hp <= 0 || i === st.active,
       }));
     }
     return [];
-  }, [mode, me, st.party, st.active]);
+  }, [uiMode, me, st.party, st.active]);
 
-  useEffect(() => setCur(0), [mode]);
+  /* 메뉴가 바뀌면 커서를 처음으로. 렌더 중에 되돌립니다(React가 권하는 "props로 상태 조정"). */
+  const [curFor, setCurFor] = useState(uiMode);
+  if (curFor !== uiMode) { setCurFor(uiMode); setCur(0); }
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -98,14 +99,14 @@ export default function Battle({ spec, party, onEnd }: {
   function choose(i: number) {
     const o = options[i];
     if (!o || o.dim) return;
-    if (mode === 'menu') {
+    if (uiMode === 'menu') {
       if (o.k === 'move') setMode('moves');
       else if (o.k === 'switch') setMode('switch');
       else act(o.k as 'ball' | 'run');
       return;
     }
-    if (mode === 'moves') act('move', Number(o.k));
-    if (mode === 'switch') act('switch', Number(o.k));
+    if (uiMode === 'moves') act('move', Number(o.k));
+    if (uiMode === 'switch') act('switch', Number(o.k));
   }
 
   const line = log[Math.min(shown, log.length - 1)] ?? '';
@@ -124,7 +125,7 @@ export default function Battle({ spec, party, onEnd }: {
           <DialogueBox text={line} onNext={() => setShown((v) => Math.min(log.length, v + 1))} />
         ) : (
           <div className="battle-menu">
-            <p className="prompt">{mode === 'menu' ? `${me.mon.name}(은)는 무엇을 할까?` : mode === 'moves' ? '기술 선택' : '교체할 기술'}</p>
+            <p className="prompt">{uiMode === 'menu' ? `${me.mon.name}(은)는 무엇을 할까?` : uiMode === 'moves' ? '기술 선택' : '교체할 기술'}</p>
             <ul>
               {options.map((o, i) => (
                 <li key={o.k}>
@@ -135,7 +136,7 @@ export default function Battle({ spec, party, onEnd }: {
                 </li>
               ))}
             </ul>
-            {mode !== 'menu' && <button className="back" onClick={() => setMode('menu')}>← 돌아가기</button>}
+            {uiMode !== 'menu' && <button className="back" onClick={() => setMode('menu')}>← 돌아가기</button>}
           </div>
         )}
       </div>

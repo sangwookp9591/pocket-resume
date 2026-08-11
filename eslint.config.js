@@ -57,6 +57,13 @@ export default tseslint.config(
   },
 
   {
+    // 빌드·린트 스크립트. node에서 직접 돌아가는 순수 JS입니다.
+    files: ['scripts/**/*.{mjs,js}', '*.config.{js,mjs}'],
+    languageOptions: { globals: globals.node, sourceType: 'module' },
+    rules: { 'no-console': 'off', '@typescript-eslint/no-unused-vars': 'off' },
+  },
+
+  {
     files: ['test/**/*.ts'],
     languageOptions: { globals: globals.node },
     rules: { 'no-console': 'off' },

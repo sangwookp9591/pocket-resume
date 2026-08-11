@@ -5,8 +5,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRunner, type Step } from '../lib/game/runner.ts';
-import type { BattleSpec, GameState, MonId } from '../content/types.ts';
+import { createRunner } from '../lib/game/runner.ts';
+import type { BattleSpec, GameState } from '../content/types.ts';
 import { createState, testAll, addMon, save, load, serialize, deserialize } from '../lib/game/state.ts';
 import { initBattle, makeUnit, step as bstep } from '../lib/game/battle.ts';
 import { createWorld } from '../lib/game/world.ts';

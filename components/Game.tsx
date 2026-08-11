@@ -5,7 +5,7 @@
    프레임 루프는 React 밖에서 돕니다 — 60Hz로 setState를 부르면 게임이 아니라
    리렌더 벤치마크가 됩니다. 캔버스는 ref로만 만지고, React는 오버레이만 맡습니다. */
 
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRenderer } from '../lib/engine/renderer.ts';
 import { createLoop } from '../lib/engine/loop.ts';
 import { createInput } from '../lib/engine/input.ts';
@@ -32,7 +32,14 @@ export default function Game() {
   const inputRef = useRef<ReturnType<typeof createInput> | null>(null);
   const runnerRef = useRef<Runner | null>(null);
   const stateRef = useRef(createState());
-  const [, forceUI] = useReducer((n) => n + 1, 0);
+  /* 프레임 루프는 React 밖에서 돌아서 최신 값을 ref로 봅니다 — 클로저가 첫 렌더에 묶입니다. */
+  const battleRef = useRef<BattleSpec | null>(null);
+  const overlayRef = useRef<'dex' | 'menu' | null>(null);
+  const wipeRef = useRef(0); // 0..1. 렌더 콜백이 매 프레임 읽습니다
+  /* 게임 상태의 정본은 ref입니다 — 러너가 한 번의 호출 안에서 읽고 쓰고 다시 읽으므로
+     React state의 비동기 갱신으로는 순서가 맞지 않습니다.
+     화면이 읽는 것은 그 사본(uiState)입니다. 렌더에서 ref를 읽으면 갱신이 반영되지 않습니다. */
+  const [uiState, setUiState] = useState<GameState>(() => createState());
 
   const [scene, setScene] = useState<'title' | 'world' | 'hall' | 'credits'>('title');
   const [step, setStep] = useState<Step | null>(null); // 러너가 낸 현재 화면
@@ -42,44 +49,30 @@ export default function Game() {
   const [boot, setBoot] = useState({ done: false, pct: 0, backend: '', missing: 0 });
   const [hasSave, setHasSave] = useState(false);
 
+  // 세이브 유무는 localStorage라 서버에서 알 수 없습니다. 하이드레이션 뒤에 한 번 읽습니다.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setHasSave(!!load()), []);
+  useEffect(() => { battleRef.current = battle; }, [battle]);
+  useEffect(() => { overlayRef.current = overlay; }, [overlay]);
 
   const getState = useCallback(() => stateRef.current, []);
-  const setState = useCallback((s: GameState) => { stateRef.current = s; forceUI(); }, []);
+  const setState = useCallback((s: GameState) => { stateRef.current = s; setUiState(s); }, []);
 
-  /* ── 스크립트 실행 ─────────────────────────────────────────── */
-  const pump = useCallback((r: Runner) => {  // eslint-disable-line react-hooks/exhaustive-deps
-    let s = r.next();
-    // 화면이 필요 없는 것은 여기서 소화합니다.
-    while (s.kind === 'banner' || s.kind === 'fx' || s.kind === 'wait' || s.kind === 'warp') {
-      if (s.kind === 'banner') { setBanner(s.text); break; }
-      if (s.kind === 'warp') { doWarp(s.warp); s = r.next(); continue; }
-      s = r.next(); // fx·wait는 지금은 즉시 통과 (연출은 CSS가 맡습니다)
+  const persist = useCallback(() => {
+    const w = worldRef.current;
+    if (w) {
+      const { x, y, dir } = w.pos;
+      stateRef.current = { ...stateRef.current, map: w.map.id, x, y, dir };
     }
-    if (s.kind === 'done') {
-      runnerRef.current = null;
-      setStep(null);
-      persist();
-      return;
-    }
-    if (s.kind === 'battle') { enterBattle(s.battle); setStep(null); return; }
-    if (s.kind === 'scene') { runnerRef.current = null; setStep(null); setScene(s.scene); return; }
-    setStep(s);
+    save(stateRef.current);
+    setUiState(stateRef.current);
+    setHasSave(true);
   }, []);
 
-  const runScript = useCallback((name: string) => {
-    const cmds = SCRIPTS[name];
-    if (!cmds) { console.warn(`[game] 없는 스크립트: ${name}`); return; }
-    const r = createRunner(cmds, { getState, setState });
-    runnerRef.current = r;
-    pump(r);
-  }, [getState, setState, pump]);
-
-  const advance = useCallback(() => {
-    const r = runnerRef.current;
-    if (!r) return;
-    pump(r);
-  }, [pump]);
+  /* pump → doWarp → runScript → pump 은 순환입니다. 진짜 순환은 아니고
+     서로를 **나중에** 부르는 것뿐이라, ref 하나로 끊습니다.
+     이걸 안 끊으면 선언 순서를 어떻게 놔도 "선언 전에 접근"이 남습니다. */
+  const runScriptRef = useRef<(name: string) => void>(() => {});
 
   /* ── 월드 이벤트 ───────────────────────────────────────────── */
   const doWarp = useCallback((w: Warp | WarpTarget) => {
@@ -87,8 +80,8 @@ export default function Game() {
     if (!world) return;
     const enter = world.goto(w.to, w.tx, w.ty, w.dir);
     setState(moveTo(getState(), w.to, w.tx, w.ty, w.dir ?? getState().dir));
-    if (enter?.kind === 'script') runScript(enter.script);
-  }, [getState, setState, runScript]);
+    if (enter?.kind === 'script') runScriptRef.current(enter.script);
+  }, [getState, setState]);
 
   /* 포켓몬의 그 소용돌이. 화면이 감기는 동안 월드는 계속 돌고, 다 감기면 배틀이 뜹니다.
      prefers-reduced-motion이면 즉시 전환합니다 — 회전하는 화면을 못 보는 사람이 있습니다. */
@@ -106,6 +99,43 @@ export default function Game() {
     };
     requestAnimationFrame(tick);
   }, []);
+
+  /* ── 스크립트 실행 ─────────────────────────────────────────── */
+  const pump = useCallback((r: Runner) => {
+    let s = r.next();
+    // 화면이 필요 없는 것은 여기서 소화합니다.
+    while (s.kind === 'banner' || s.kind === 'fx' || s.kind === 'wait' || s.kind === 'warp') {
+      if (s.kind === 'banner') { setBanner(s.text); break; }
+      if (s.kind === 'warp') { doWarp(s.warp); s = r.next(); continue; }
+      s = r.next(); // fx·wait는 지금은 즉시 통과 (연출은 CSS가 맡습니다)
+    }
+    if (s.kind === 'done') {
+      runnerRef.current = null;
+      setStep(null);
+      persist();
+      return;
+    }
+    if (s.kind === 'battle') { enterBattle(s.battle); setStep(null); return; }
+    if (s.kind === 'scene') { runnerRef.current = null; setStep(null); setScene(s.scene); return; }
+    setStep(s);
+  }, [doWarp, enterBattle, persist]);
+
+  const runScript = useCallback((name: string) => {
+    const cmds = SCRIPTS[name];
+    if (!cmds) { console.warn(`[game] 없는 스크립트: ${name}`); return; }
+    const r = createRunner(cmds, { getState, setState });
+    runnerRef.current = r;
+    pump(r);
+  }, [getState, setState, pump]);
+
+  // 위에서 끊어 둔 순환을 여기서 잇습니다.
+  useEffect(() => { runScriptRef.current = runScript; }, [runScript]);
+
+  const advance = useCallback(() => {
+    const r = runnerRef.current;
+    if (!r) return;
+    pump(r);
+  }, [pump]);
 
   const handleWorldEvent = useCallback((e: WorldEvent | null | undefined) => {
     if (!e) return;
@@ -187,13 +217,6 @@ export default function Game() {
     return () => { dead = true; stop(); rendererRef.current = null; };
   }, [scene, handleWorldEvent]);
 
-  // 루프 안에서 최신 값을 보려면 ref가 필요합니다 — 클로저가 첫 렌더에 묶입니다.
-  const battleRef = useRef<BattleSpec | null>(null);
-  const overlayRef = useRef<'dex' | 'menu' | null>(null);
-  const wipeRef = useRef(0); // 0..1. 렌더 콜백이 매 프레임 읽습니다
-  useEffect(() => { battleRef.current = battle; }, [battle]);
-  useEffect(() => { overlayRef.current = overlay; }, [overlay]);
-
   /* ── 화면 배율. 정수배만 — 픽셀이 흐려지면 안 됩니다 ─────────── */
   useEffect(() => {
     const fit = () => {
@@ -211,19 +234,12 @@ export default function Game() {
   /* ── 플레이 시간 ───────────────────────────────────────────── */
   useEffect(() => {
     if (scene !== 'world') return;
-    const id = setInterval(() => { stateRef.current.playtime += 1000; }, 1000);
+    // 1초마다 새 객체로 갈아 끼웁니다 — 제자리 수정은 React가 변화를 못 봅니다.
+    const id = setInterval(() => {
+      stateRef.current = { ...stateRef.current, playtime: stateRef.current.playtime + 1000 };
+    }, 1000);
     return () => clearInterval(id);
   }, [scene]);
-
-  const persist = useCallback(() => {
-    const w = worldRef.current;
-    if (w) {
-      const { x, y, dir } = w.pos;
-      stateRef.current = { ...stateRef.current, map: w.map.id, x, y, dir };
-    }
-    save(stateRef.current);
-    setHasSave(true);
-  }, []);
 
   /* ── 시작 ─────────────────────────────────────────────────── */
   const start = useCallback((fresh: boolean) => {
@@ -235,7 +251,7 @@ export default function Game() {
     worldRef.current = createWorld(s.map, { ...s, ...at }, { onEvent: handleWorldEvent });
     setScene('world');
     if (fresh) setTimeout(() => runScript('lab.open'), 60);
-    forceUI();
+    setUiState(s);
   }, [handleWorldEvent, runScript]);
 
   /* ── 배틀 종료 ─────────────────────────────────────────────── */
@@ -243,11 +259,11 @@ export default function Game() {
     let s = { ...stateRef.current, party };
     if (caught) s = addMon(s, caught as MonId, 5);
     stateRef.current = s;
+    setUiState(s);
     setBattle(null);
     persist();
     // 스크립트 도중의 배틀이었으면 이어서 진행합니다.
     if (runnerRef.current) setTimeout(() => advance(), 40);
-    forceUI();
   }, [advance, persist]);
 
   /* ── 렌더 ─────────────────────────────────────────────────── */
@@ -256,12 +272,12 @@ export default function Game() {
   }
 
   if (scene === 'hall') {
-    return <HallOfFame state={stateRef.current} onCredits={() => setScene('credits')} />;
+    return <HallOfFame state={uiState} onCredits={() => setScene('credits')} />;
   }
 
-  if (scene === 'credits') return <Credits state={stateRef.current} onTitle={() => setScene('title')} />;
+  if (scene === 'credits') return <Credits state={uiState} onTitle={() => setScene('title')} />;
 
-  const st = stateRef.current;
+  const st = uiState;
   return (
     <div className="stage">
       <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} tabIndex={0} aria-label="게임 화면" />

@@ -8,8 +8,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "check": "npm run typecheck && npm run lint && node --test \"test/**/*.test.ts\""
+    "lint": "node scripts/lint.mjs",
+    "check": "npm run typecheck && npm run lint && node --test \"test/**/*.test.ts\"",
+    "lint:fix": "node scripts/lint.mjs --fix"
   },
   "dependencies": {
     "next": "16.3.0",
@@ -22,10 +23,13 @@
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
     "eslint": "^10.8.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.9.0",
     "typescript": "^7.0.2",
+    "typescript-6": "npm:typescript@^6.0.3",
     "typescript-eslint": "^8.67.0"
   }
 }
