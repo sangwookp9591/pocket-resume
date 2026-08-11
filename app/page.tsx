@@ -1,4 +1,4 @@
-import Game from '../components/Game.jsx';
+import Game from '../components/Game.tsx';
 import './game.css';
 import { profileJsonLd } from '../lib/jsonld.ts';
 

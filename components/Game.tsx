@@ -22,8 +22,8 @@ import { byId } from '../content/mons.ts';
 import type { BattleSpec, Dir, GameState, MapId, MonId, PartyUnit, Warp, WarpTarget } from '../content/types.ts';
 import type { Runner, Step } from '../lib/game/runner.ts';
 import type { WorldEvent } from '../lib/game/world.ts';
-import Battle from './Battle.jsx';
-import { DialogueBox, Choices, NameInput, Banner, Dex, Menu, TitleScreen, HallOfFame, TouchPad } from './ui.jsx';
+import Battle from './Battle.tsx';
+import { DialogueBox, Choices, NameInput, Banner, Dex, Menu, TitleScreen, HallOfFame, TouchPad } from './ui.tsx';
 
 export default function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

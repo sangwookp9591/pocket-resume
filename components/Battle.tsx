@@ -8,7 +8,7 @@ import { initBattle, makeUnit, step, grantExp } from '../lib/game/battle.ts';
 import { byId } from '../content/mons.ts';
 import type { BattleSpec, PartyUnit } from '../content/types.ts';
 import type { BattleState } from '../lib/game/battle.ts';
-import { DialogueBox, TypeChip, PixelImg } from './ui.jsx';
+import { DialogueBox, TypeChip, PixelImg } from './ui.tsx';
 
 const MENU: Array<[string, string]> = [
   ['move', '기술'],
