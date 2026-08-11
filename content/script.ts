@@ -24,6 +24,8 @@ import type { Choice, Cmd, MonId } from './types.ts';
 import { JOURNEY, FINALE } from './journey.ts';
 import { STARTERS, byId } from './mons.ts';
 
+// fromEntries는 값 타입을 Record<string, any>로 흘립니다. 키는 Chapter.id라 string 그대로 두고
+// 값만 되돌립니다 — 없는 id를 찾으면 undefined이고, 그건 test/content.test.ts가 잡습니다.
 const J = Object.fromEntries(JOURNEY.map((j) => [j.id, j])) as Record<string, (typeof JOURNEY)[number]>;
 
 /** 기술을 잡았을 때 공통으로 나오는 마무리. 도감 설명을 그대로 보여 줍니다. */

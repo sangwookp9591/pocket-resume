@@ -3,7 +3,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MAPS, MAP_ORDER } from '../content/maps.ts';
-import type { MapDef } from '../content/types.ts';
 
 const rows = (s: string) => s.replace(/^\n/, '').replace(/\n$/, '').split('\n');
 

@@ -394,6 +394,7 @@ function rank(query: string, k: number): WikiChunk[] | null {
   if (!q.size) return null;
   const out = HAY.map((w) => {
     let s = 0;
+    // DF는 바로 위에서 모든 조각의 hay를 훑어 채웠고, 여기 오는 g는 w.hay에 있는 것뿐입니다 — 반드시 있습니다.
     for (const g of q) if (w.hay.has(g)) s += (w.tagHay.has(g) ? 5 : 1) / DF.get(g)!;
     // 길이 정규화(BM25의 b항과 같은 꼴). 개요 조각은 온갖 말을 다 담고 있어서 안 나누면
     // "쿠폰"을 물어도 백엔드 개요가 1등을 하고, 제곱근으로 나누면 반대로 가장 짧은

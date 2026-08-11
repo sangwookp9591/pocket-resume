@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { MAPS } from '../content/maps.ts';
 import { SCRIPTS } from '../content/script.ts';
 import { MONS, byId, STARTERS, TYPES, EFFECT } from '../content/mons.ts';
-import type { BadgeId, Cmd, MapId, MonId, TypeId } from '../content/types.ts';
+import type { BadgeId, Cmd, MonId, TypeId } from '../content/types.ts';
 import { JOURNEY, BADGES } from '../content/journey.ts';
 
 const cmds: Cmd[] = Object.values(SCRIPTS).flat();
@@ -76,6 +76,8 @@ test('journey의 gets가 전부 실재하고, 회사 번호가 맞다', () => {
 
 test('기술몬의 타입과 상성표가 닫혀 있다', () => {
   for (const m of MONS) assert.ok(TYPES[m.type], `${m.name}: 없는 타입 ${m.type}`);
+  // Object.entries/keys는 키를 string으로 넓힙니다. 그 키가 정말 TypeId인지가 이 테스트의 검사 대상이라
+  // 단언으로 통과시키고, 아니면 아래 런타임 assert에서 TYPES[from]이 undefined로 잡힙니다.
   for (const [from, tbl] of Object.entries(EFFECT) as Array<[TypeId, Record<TypeId, number>]>) {
     assert.ok(TYPES[from], `상성표에 없는 타입 ${from}`);
     for (const to of Object.keys(tbl) as TypeId[]) assert.ok(TYPES[to], `상성표 ${from}→${to}: 없는 타입`);
