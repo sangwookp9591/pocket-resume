@@ -75,7 +75,7 @@ Outbox 워커로 처리해 유실과 중복을 구조에서 막았다(멀티 인
 ShedLock · 멱등 권위 · consume/cancel 역연산 · usage 파티셔닝
 ```
 
-**게임을 위해 수치를 지어내지 않았습니다.** `content/wiki.js`의 커밋 분석에서만 옮겼고,
+**게임을 위해 수치를 지어내지 않았습니다.** `content/wiki.ts`의 커밋 분석에서만 옮겼고,
 1~3번 회사는 본인 진술(`evidence: 'self'`), ZIVO는 git 이력 분석(`evidence: 'git'`)으로
 근거 등급을 나눠 뒀습니다. "하지 않은 일" 조각은 게임에서도 하지 않은 일입니다.
 

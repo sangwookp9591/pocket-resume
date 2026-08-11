@@ -349,6 +349,6 @@ export function parseMap(def)   // → { w, h, ground: Uint8Array, over: Uint8Ar
 
 ## 10. 사실 정확성
 
-이력 문장은 `content/wiki.js`(3d-web-profile의 `lib/wiki.js` 이식)에서만 가져옵니다.
+이력 문장은 `content/wiki.ts`(3d-web-profile의 `lib/wiki.js` 이식)에서만 가져옵니다.
 **게임을 위해 수치를 지어내지 않습니다.** 도감 설명은 실제 이력 문장을 축약한 것이어야 하고,
 `caution` 조각의 "하지 않은 일"은 게임에서도 하지 않은 일입니다.

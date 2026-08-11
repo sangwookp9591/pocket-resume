@@ -4,9 +4,9 @@
 
 | 항목 | 어떻게 |
 |---|---|
-| 지면 타일 59종 (잔디·흙길·물·돌바닥·모래·마루·카펫·다리 + 오토타일 엣지 16종 × 3쌍) | **코드 절차 생성** (`lib/engine/tilegen.js`). AI도 외부 팩도 쓰지 않았습니다 — seamless를 보장하는 유일한 방법입니다 |
+| 지면 타일 59종 (잔디·흙길·물·돌바닥·모래·마루·카펫·다리 + 오토타일 엣지 16종 × 3쌍) | **코드 절차 생성** (`lib/engine/tilegen.ts`). AI도 외부 팩도 쓰지 않았습니다 — seamless를 보장하는 유일한 방법입니다 |
 | 캐릭터 18 · 기술몬 21 · 건물/오브젝트 20 · 배틀 배경 5 · 타이틀 1 = **65장** | Higgsfield AI 생성. 타이틀만 `gpt_image_2`, 나머지 64장은 `nano_banana_flash`. **109 크레딧 · 470KB · 영구 실패 0장.** 프롬프트와 결과는 `scripts/assets/manifest.ts`와 `docs/ASSET-REPORT.md`에 |
-| 실내 구조물 (벽·창·문·계단·카운터) | **코드 절차 생성** (`lib/game/assets.js`). 타일 격자에 딱 맞아야 해서 AI에 시키지 않았습니다 |
+| 실내 구조물 (벽·창·문·계단·카운터) | **코드 절차 생성** (`lib/game/assets.ts`). 타일 격자에 딱 맞아야 해서 AI에 시키지 않았습니다 |
 | 대화창·HP바·도감·메뉴·전환 연출 | 전부 CSS/DOM. 이미지 에셋 0장 |
 | 마스코트 Ai-ng(아잉) | 원작자 본인. 픽셀판은 [3d-web-profile](https://github.com/sangwookp9591)의 `public/mascot/pose/idle.webp`를 참조 이미지로 넣어 생성 |
 
