@@ -7,9 +7,11 @@
 
 ![Next.js](https://img.shields.io/badge/Next.js-16.3%20App%20Router-000000?logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-7.0-3178C6?logo=typescript&logoColor=white)
 ![WebGPU](https://img.shields.io/badge/WebGPU-WGSL%20·%20드로우콜%201회-7C9EE8)
 ![Tests](https://img.shields.io/badge/테스트-156개-7FA65C)
 ![Deps](https://img.shields.io/badge/런타임%20의존성-3개-blue)
+![Assets](https://img.shields.io/badge/에셋-65장%20·%20470KB-E8A87C)
 
 </div>
 
@@ -96,10 +98,18 @@ ShedLock · 멱등 권위 · consume/cancel 역연산 · usage 파티셔닝
 지면을 AI로 만들지 않은 이유는 하나입니다 — **AI로 seamless 타일을 만들면 이음매가 반드시 보입니다.**
 
 ```bash
-npm run dev      # 개발 서버
-npm run check    # node --test, 156개
+npm run dev        # 개발 서버
+npm run typecheck  # tsc 7.0 --noEmit
+npm run lint       # ESLint 10
+npm run check      # 위 둘 + 테스트 156개
 npm run build
 ```
+
+> **ESLint가 TypeScript 7에서 도는 방법.** typescript-eslint 8.67은 TS 7을 임포트 시점에
+> **거부합니다**. TypeScript 팀이 안내하는 side-by-side로 풀었습니다 — `typescript-6` 별칭을
+> 따로 두고, `scripts/lint.mjs`가 `module.registerHooks`로 **린터가 볼 때만** `typescript`를
+> 6으로 돌립니다. root의 `typescript`는 7.0.2 그대로라 `tsc`와 에디터는 7을 봅니다.
+> typescript-eslint가 TS 7을 지원하면 그 파일을 지우고 `eslint`를 직접 부르면 됩니다.
 
 ---
 
@@ -109,6 +119,7 @@ npm run build
 - 게임을 못 하거나 안 하는 사람 → `/resume`가 항상 있습니다
 - JS를 안 돌리는 크롤러 → `<noscript>`와 JSON-LD, `/iron.md`
 - **에셋이 하나라도 안 오면 그 자리에 자리표시자를 그립니다** — 조용히 빈 화면이 되지 않게
+- WebGPU가 없으면 WebGL2, 그것도 없으면 Canvas2D. 셋 다 확인했습니다
 - 모바일 → 터치 D-pad. 화면 아무 데나 끌어도 걷습니다
 
 ---
@@ -117,11 +128,12 @@ npm run build
 
 ```
 content/      맵·기술몬·대사·위키 — 사실은 전부 여기서만 옵니다
+              types.ts가 도메인 계약입니다. id를 string으로 두면 오타가 런타임까지 갑니다
 lib/engine/   렌더러·타일 생성·맵 파서·입력·루프  (React를 모릅니다)
 lib/game/     배틀·세이브·스크립트 러너·월드      (캔버스를 모릅니다)
 components/   씬 관리자·배틀 UI·도감              (규칙을 모릅니다)
 docs/         설계 계약 · 크레딧 · 에셋 리포트
-test/         156개. 맵 33 · 콘텐츠 12 · 배틀 16 · 러너 16 · 월드 19 · 플레이스루 8 · 엔진 51
+test/         156개. 맵 33 · 콘텐츠 12 · 배틀 16 · 러너 16 · 월드 19 · 플레이스루 8 · 엔진 52
 ```
 
 계층마다 모르는 것이 있는 것이 설계입니다. `docs/GAME-CONTRACT.md`가 그 경계를 적어 둔 계약이고,
