@@ -11,18 +11,34 @@ export const MAX_ACC_MS = 250; // 이 이상 쌓인 시간은 버립니다
  *   now/raf/caf는 테스트 주입용입니다. 기본값은 브라우저 것.
  * @returns {{start:()=>void, stop:()=>void, running:boolean, tick:(t:number)=>void}}
  */
-export function createLoop({ update, render, now, raf, caf } = {}) {
+export interface LoopOpts {
+  /** dt는 **초** 단위입니다(STEP_MS/1000). ms로 세는 쪽이 있으면 호출부에서 맞추세요. */
+  update?: (dt: number) => void;
+  render?: (alpha: number) => void;
+  now?: () => number;
+  raf?: (cb: (t: number) => void) => number;
+  caf?: (id: number) => void;
+}
+
+export interface Loop {
+  readonly running: boolean;
+  start: () => void;
+  stop: () => void;
+  tick: (t: number) => void;
+}
+
+export function createLoop({ update, render, now, raf, caf }: LoopOpts = {}): Loop {
   const clock = now ?? (() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
-  const req = raf ?? ((cb) => requestAnimationFrame(cb));
-  const cancel = caf ?? ((id) => cancelAnimationFrame(id));
+  const req = raf ?? ((cb: (t: number) => void) => requestAnimationFrame(cb));
+  const cancel = caf ?? ((id: number) => cancelAnimationFrame(id));
 
   let running = false;
-  let handle = null;
+  let handle: number | null = null;
   let last = 0;
   let acc = 0;
 
   /** 한 프레임. rAF가 넘겨주는 타임스탬프를 그대로 받습니다. */
-  function tick(t) {
+  function tick(t: number) {
     if (!running) return;
     let dt = t - last;
     last = t;
@@ -31,9 +47,9 @@ export function createLoop({ update, render, now, raf, caf } = {}) {
 
     while (acc >= STEP_MS) {
       acc -= STEP_MS;
-      update(STEP_MS / 1000);
+      update?.(STEP_MS / 1000);
     }
-    render(acc / STEP_MS); // 0..1 보간 계수
+    render?.(acc / STEP_MS); // 0..1 보간 계수
     handle = req(tick);
   }
 

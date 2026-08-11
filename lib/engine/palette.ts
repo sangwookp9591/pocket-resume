@@ -17,20 +17,21 @@ export const PALETTE = {
 };
 
 /** '#RRGGBB' → [r, g, b] (0..255) */
-export function rgb(hex) {
+export function rgb(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
 /** '#RRGGBB' → [r, g, b] (0..1). 셰이더 유니폼용. */
-export function rgb01(hex) {
-  return rgb(hex).map((v) => v / 255);
+export function rgb01(hex: string): [number, number, number] {
+  const [r, g, b] = rgb(hex);
+  return [r / 255, g / 255, b / 255];
 }
 
-const clamp255 = (v) => (v < 0 ? 0 : v > 255 ? 255 : Math.round(v));
+const clamp255 = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : Math.round(v));
 
 /** amt > 0 이면 흰쪽으로, < 0 이면 검은쪽으로. [r,g,b] in → [r,g,b] out */
-export function shade(c, amt) {
+export function shade(c: [number, number, number], amt: number): [number, number, number] {
   const t = amt > 0 ? 255 : 0;
   const k = Math.abs(amt);
   return [
@@ -41,7 +42,7 @@ export function shade(c, amt) {
 }
 
 /** 두 색 사이 선형 보간. t=0 → a, t=1 → b */
-export function mix(a, b, t) {
+export function mix(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
   return [
     clamp255(a[0] + (b[0] - a[0]) * t),
     clamp255(a[1] + (b[1] - a[1]) * t),
@@ -60,7 +61,7 @@ export function mix(a, b, t) {
 
 export const TIMES = ['dawn', 'morning', 'noon', 'afternoon', 'dusk', 'night'];
 
-export const TIME_TINTS = {
+export const TIME_TINTS: Record<string, { rgba: [number, number, number, number]; strength: number }> = {
   // 새벽: 분홍이 도는 옅은 보라. 아직 어둡습니다.
   dawn: { rgba: [0.78, 0.72, 0.95, 0.10], strength: 0.42 },
   // 아침: 거의 손대지 않습니다. 크림 한 겹.
@@ -76,12 +77,12 @@ export const TIME_TINTS = {
 };
 
 /** 모르는 시간대는 noon으로 — 조용히 검게 만들지 않습니다. */
-export function tintFor(time) {
+export function tintFor(time: string): { rgba: [number, number, number, number]; strength: number } {
   return TIME_TINTS[time] ?? TIME_TINTS.noon;
 }
 
 /* tilegen이 쓰는 지면 색. 전부 위 팔레트에서 파생시킵니다. */
-export const GROUND_COLORS = {
+export const GROUND_COLORS: Record<string, [number, number, number]> = {
   grass: rgb(PALETTE.moss),
   'grass-dark': rgb(PALETTE.pine),
   path: rgb(PALETTE.bark),

@@ -3,10 +3,29 @@
    이동 속도가 끌려다니지 않게. blur에서 전부 놓습니다: 탭 전환 후 계속 걷는
    버그의 원인이 이것 하나입니다. */
 
-const DIRS = ['up', 'down', 'left', 'right'];
+import type { Dir } from '../../content/types.ts';
+
+/** 방향 외의 액션. run만 눌린 상태를 그대로 보고, 나머지는 눌린 순간 1회(래치)입니다. */
+export type Action = Dir | 'confirm' | 'cancel' | 'run' | 'menu';
+
+export interface Input {
+  /** 새로 눌린 방향 1회분. consume()에서 지워집니다 */
+  readonly dir: Dir | null;
+  /** 지금 눌려 있는 방향. 대각선은 마지막에 누른 축 우선 */
+  readonly dirHeld: Dir | null;
+  readonly confirm: boolean;
+  readonly cancel: boolean;
+  readonly menu: boolean;
+  readonly run: boolean;
+  consume: () => void;
+  poll: () => void;
+  destroy: () => void;
+}
+
+const DIRS: Dir[] = ['up', 'down', 'left', 'right'];
 
 // e.code(물리 키) 우선. 자판 배열이 바뀌어도 WASD 위치는 그대로입니다.
-const BY_CODE = {
+const BY_CODE: Record<string, Action> = {
   ArrowUp: 'up',
   ArrowDown: 'down',
   ArrowLeft: 'left',
@@ -26,7 +45,7 @@ const BY_CODE = {
   Tab: 'menu',
 };
 
-const BY_KEY = {
+const BY_KEY: Record<string, Action> = {
   ArrowUp: 'up',
   ArrowDown: 'down',
   ArrowLeft: 'left',
@@ -45,7 +64,7 @@ const BY_KEY = {
 };
 
 // 게임패드 버튼 → 액션 (표준 매핑)
-const PAD_BUTTONS = { 12: 'up', 13: 'down', 14: 'left', 15: 'right', 0: 'confirm', 1: 'cancel', 2: 'run', 9: 'menu' };
+const PAD_BUTTONS: Record<number, Action> = { 12: 'up', 13: 'down', 14: 'left', 15: 'right', 0: 'confirm', 1: 'cancel', 2: 'run', 9: 'menu' };
 const STICK = 0.5; // 좌스틱 임계값
 const TOUCH_DEAD = 16; // 이만큼 끌어야 방향으로 칩니다 (px)
 
@@ -56,26 +75,27 @@ const TOUCH_DEAD = 16; // 이만큼 끌어야 방향으로 칩니다 (px)
  *   dirHeld  — 지금 눌려 있는 방향. 계속 걷기용. 대각선은 마지막에 누른 축 우선.
  *   confirm/cancel/menu — 눌린 순간 1회(래치), run — 눌린 상태 그대로.
  */
-export function createInput(el) {
-  const win = el?.ownerDocument?.defaultView ?? (typeof window !== 'undefined' ? window : el);
-  const held = new Set(); // 눌려 있는 액션
-  const stack = []; // 방향만, 누른 순서. 마지막이 우선.
-  const latched = { dir: null, confirm: false, cancel: false, menu: false };
+export function createInput(el: HTMLElement | null): Input {
+  const win: Window | null = el?.ownerDocument?.defaultView ?? (typeof window !== 'undefined' ? window : null);
+  const held = new Set<Action>(); // 눌려 있는 액션
+  const stack: Dir[] = []; // 방향만, 누른 순서. 마지막이 우선.
+  const latched: { dir: Dir | null; confirm: boolean; cancel: boolean; menu: boolean } =
+    { dir: null, confirm: false, cancel: false, menu: false };
 
-  function press(action) {
+  function press(action: Action | undefined) {
     if (!action || held.has(action)) return; // 반복 무시
     held.add(action);
-    if (DIRS.includes(action)) {
-      stack.push(action);
-      latched.dir = action;
+    if (DIRS.includes(action as Dir)) {
+      stack.push(action as Dir);
+      latched.dir = action as Dir;
     } else if (action !== 'run') {
-      latched[action] = true;
+      latched[action as 'confirm' | 'cancel' | 'menu'] = true;
     }
   }
 
-  function release(action) {
+  function release(action: Action | undefined) {
     if (!action || !held.delete(action)) return;
-    const i = stack.indexOf(action);
+    const i = stack.indexOf(action as Dir);
     if (i >= 0) stack.splice(i, 1);
   }
 
@@ -85,14 +105,14 @@ export function createInput(el) {
   }
 
   /* ── 키보드 ─────────────────────────────────────────────── */
-  const onKeyDown = (e) => {
+  const onKeyDown = (e: KeyboardEvent) => {
     const a = BY_CODE[e.code] ?? BY_KEY[e.key];
     if (!a) return;
     e.preventDefault?.(); // 스페이스 스크롤·Tab 포커스 이동 차단
     if (e.repeat) return;
     press(a);
   };
-  const onKeyUp = (e) => {
+  const onKeyUp = (e: KeyboardEvent) => {
     const a = BY_CODE[e.code] ?? BY_KEY[e.key];
     if (a) release(a);
   };
@@ -101,13 +121,13 @@ export function createInput(el) {
   /* ── 터치 가상 D-pad ─────────────────────────────────────
      화면에 그리지 않습니다(UI는 코디네이터 몫). 누른 자리가 원점인
      상대 스틱입니다 — 엄지가 어디에 닿든 바로 걷습니다. */
-  let touch = null;
-  const onDown = (e) => {
+  let touch: { id: number; x: number; y: number; dir: Dir | null; moved: boolean } | null = null;
+  const onDown = (e: PointerEvent) => {
     if (e.pointerType === 'mouse') return;
     touch = { id: e.pointerId, x: e.clientX, y: e.clientY, dir: null, moved: false };
-    el.setPointerCapture?.(e.pointerId);
+    el?.setPointerCapture?.(e.pointerId);
   };
-  const onMove = (e) => {
+  const onMove = (e: PointerEvent) => {
     if (!touch || e.pointerId !== touch.id) return;
     const dx = e.clientX - touch.x;
     const dy = e.clientY - touch.y;
@@ -120,7 +140,7 @@ export function createInput(el) {
       press(d);
     }
   };
-  const onUp = (e) => {
+  const onUp = (e: PointerEvent) => {
     if (!touch || e.pointerId !== touch.id) return;
     if (touch.dir) release(touch.dir);
     else if (!touch.moved) {
@@ -134,16 +154,16 @@ export function createInput(el) {
   /* ── 게임패드 ────────────────────────────────────────────
      이벤트가 없는 유일한 입력이라 접근할 때마다 폴링합니다.
      navigator.getGamepads()는 싸고, 프레임당 몇 번 불러도 문제없습니다. */
-  const padHeld = new Set();
-  function poll() {
+  const padHeld = new Set<Action>();
+  function poll(): void {
     const pads = typeof navigator !== 'undefined' ? navigator.getGamepads?.() ?? [] : [];
-    const now = new Set();
+    const now = new Set<Action>();
     for (const p of pads) {
       if (!p) continue;
       for (const [i, a] of Object.entries(PAD_BUTTONS)) {
-        if (p.buttons[i]?.pressed) now.add(a);
+        if (p.buttons[Number(i)]?.pressed) now.add(a);
       }
-      const [ax, ay] = [p.axes[0] ?? 0, p.axes[1] ?? 0];
+      const [ax, ay] = [p.axes[0] ?? 0, p.axes[1] ?? 0] as [number, number];
       if (ax < -STICK) now.add('left');
       else if (ax > STICK) now.add('right');
       if (ay < -STICK) now.add('up');
@@ -155,7 +175,11 @@ export function createInput(el) {
     for (const a of now) padHeld.add(a);
   }
 
-  const on = (t, ev, fn, opts) => t?.addEventListener?.(ev, fn, opts);
+  // 이벤트 종류마다 타입이 달라 여기서만 느슨하게 받습니다 — 붙이는 대상이 window와 element 둘입니다.
+  const on = (t: EventTarget | null, ev: string, fn: (e: never) => void, opts?: AddEventListenerOptions) =>
+    t?.addEventListener?.(ev, fn as EventListener, opts);
+  const off = (t: EventTarget | null, ev: string, fn: (e: never) => void) =>
+    t?.removeEventListener?.(ev, fn as EventListener);
   on(win, 'keydown', onKeyDown);
   on(win, 'keyup', onKeyUp);
   on(win, 'blur', onBlur);
@@ -198,7 +222,6 @@ export function createInput(el) {
     },
     poll,
     destroy() {
-      const off = (t, ev, fn) => t?.removeEventListener?.(ev, fn);
       off(win, 'keydown', onKeyDown);
       off(win, 'keyup', onKeyUp);
       off(win, 'blur', onBlur);

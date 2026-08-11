@@ -7,11 +7,23 @@
 import { GROUND_COLORS, shade, mix } from './palette.ts';
 import { TILE } from './config.ts';
 
+/** 픽셀 하나를 칠하는 함수. (x,y) → [r,g,b] 또는 null(투명) */
+type Paint = (x: number, y: number) => [number, number, number] | null;
+type Rnd = () => number;
+
+/** 구운 아틀라스. canvas는 node에서 null입니다 — 픽셀만 씁니다. */
+export interface BakedTiles {
+  width: number;
+  height: number;
+  data: Uint8ClampedArray;
+  uv: Record<string, [number, number, number, number]>;
+}
+
 export { TILE };
 const COLS = 8; // 아틀라스 가로 타일 수 → 32px 타일이면 256px
 
 /** 시드 PRNG. Math.random() 금지 — 같은 시드면 같은 그림이어야 합니다. */
-export function mulberry32(seed) {
+export function mulberry32(seed: number): Rnd {
   let a = seed >>> 0;
   return function () {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -22,7 +34,7 @@ export function mulberry32(seed) {
 }
 
 /** 기본 타일 이름 (물은 3프레임). */
-export const BASE_TILES = [
+export const BASE_TILES: string[] = [
   'grass',
   'grass-dark',
   'path',
@@ -36,21 +48,21 @@ export const BASE_TILES = [
   'bridge',
 ];
 
-export const WATER_FRAMES = ['water', 'water-1', 'water-2'];
+export const WATER_FRAMES: string[] = ['water', 'water-1', 'water-2'];
 
 /** 오토타일 쌍. base 위에 other가 마스크 방향에서 스며듭니다.
     이게 없으면 맵이 격자무늬로 보입니다. */
-export const EDGE_PAIRS = [
+export const EDGE_PAIRS: Array<[string, string]> = [
   ['grass', 'path'],
   ['grass', 'sand'],
   ['water', 'sand'], // 물가
 ];
 
 /** 4비트 이웃 마스크: 1=N 2=E 4=S 8=W */
-export const edgeKey = (base, other, mask) => `edge:${base}-${other}:${mask}`;
+export const edgeKey = (base: string, other: string, mask: number) => `edge:${base}-${other}:${mask}`;
 
 /** 아틀라스에 들어가는 모든 타일 이름 (순서 = 배치 순서). */
-export function tileNames() {
+export function tileNames(): string[] {
   const names = [...BASE_TILES];
   for (const [base, other] of EDGE_PAIRS) {
     for (let m = 0; m < 16; m++) names.push(edgeKey(base, other, m));
@@ -60,7 +72,8 @@ export function tileNames() {
 
 /* ── 픽셀 유틸 ─────────────────────────────────────────────────── */
 
-function poke(buf, W, x, y, c, a = 255) {
+function poke(buf: Uint8ClampedArray, W: number, x: number, y: number, c: [number, number, number] | null, a = 255): void {
+  if (!c) return; // null은 투명 — 그냥 안 칠합니다
   const i = (y * W + x) * 4;
   buf[i] = c[0];
   buf[i + 1] = c[1];
@@ -69,7 +82,7 @@ function poke(buf, W, x, y, c, a = 255) {
 }
 
 /** 타일 한 칸을 (ox,oy)에 그립니다. paint(x,y) → [r,g,b] (타일 로컬 좌표) */
-function stamp(buf, W, ox, oy, paint) {
+function stamp(buf: Uint8ClampedArray, W: number, ox: number, oy: number, paint: Paint): void {
   for (let y = 0; y < TILE; y++) {
     for (let x = 0; x < TILE; x++) poke(buf, W, ox + x, oy + y, paint(x, y));
   }
@@ -79,16 +92,16 @@ function stamp(buf, W, ox, oy, paint) {
    전부 (rnd로 미리 만든 노이즈 표) → (x,y) → 색 순수 함수입니다.
    노이즈를 표로 뽑아 두면 페인터가 호출 순서에 안 흔들립니다. */
 
-function noiseField(rnd) {
+function noiseField(rnd: Rnd) {
   const n = new Float32Array(TILE * TILE);
   for (let i = 0; i < n.length; i++) n[i] = rnd();
   return n;
 }
 
-function makeBase(name, rnd) {
-  const c = GROUND_COLORS[name.replace(/-\d$/, '')] ?? GROUND_COLORS.grass;
+function makeBase(name: string, rnd: Rnd): Paint {
+  const c = (GROUND_COLORS[name.replace(/-\d$/, '')] ?? GROUND_COLORS.grass)!;
   const n = noiseField(rnd);
-  const at = (x, y) => n[y * TILE + x];
+  const at = (x: number, y: number) => n[y * TILE + x]!;
 
   switch (name) {
     case 'grass':
@@ -196,7 +209,7 @@ function makeBase(name, rnd) {
 /** 한 변의 스며드는 깊이(px). 쌍마다 고정이라 이웃 타일과 대략 이어집니다.
     ponytail: 변별 지터를 쌍당 하나로 공유합니다 — 이웃 타일과 1~2px 어긋날 수 있지만
     타일 크기에서는 안 보입니다. 완벽히 맞추려면 (쌍,변) 쌍대칭 지터로 올리세요. */
-function jitterSet(rnd) {
+function jitterSet(rnd: Rnd): Uint8Array[] {
   const lo = Math.max(2, Math.round(TILE * 0.09));
   const hi = Math.round(TILE * 0.35);
   const one = () => {
@@ -211,14 +224,14 @@ function jitterSet(rnd) {
   return [one(), one(), one(), one()]; // N E S W
 }
 
-function makeEdge(base, other, mask, seed, jit) {
+function makeEdge(base: string, other: string, mask: number, seed: number, jit: Uint8Array[]): Paint {
   // 바탕·스며드는 쪽 모두 기본 타일과 같은 시드 → 엣지 타일이 기본 타일과 이어져 보입니다.
   const basePaint = makeBase(base, mulberry32((seed ^ hashName(base)) >>> 0));
   const otherPaint = makeBase(other, mulberry32((seed ^ hashName(other)) >>> 0));
-  const line = shade(GROUND_COLORS[other], -0.28);
-  const [jN, jE, jS, jW] = jit;
+  const line = shade(GROUND_COLORS[other]!, -0.28);
+  const [jN, jE, jS, jW] = jit as [Uint8Array, Uint8Array, Uint8Array, Uint8Array];
 
-  const depth = (x, y) => {
+  const depth = (x: number, y: number) => {
     // 각 변에서 얼마나 파고들었는지. 0 이하면 안 덮임.
     let d = -99;
     if (mask & 1) d = Math.max(d, jN[x] - y);
@@ -236,7 +249,7 @@ function makeEdge(base, other, mask, seed, jit) {
   };
 }
 
-function hashName(s) {
+function hashName(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
   return h >>> 0;
@@ -248,13 +261,13 @@ function hashName(s) {
  * 캔버스 없이 픽셀만 굽습니다. node에서 해시 비교로 테스트하는 대상.
  * @returns {{width:number,height:number,data:Uint8ClampedArray,uv:Record<string,number[]>}}
  */
-export function bakeTilePixels(seed = 20260811) {
+export function bakeTilePixels(seed = 20260811): BakedTiles {
   const names = tileNames();
   const rows = Math.ceil(names.length / COLS);
   const width = COLS * TILE;
   const height = rows * TILE;
   const data = new Uint8ClampedArray(width * height * 4);
-  const uv = {};
+  const uv: Record<string, [number, number, number, number]> = {};
 
   const rnd = mulberry32(seed);
   const jitters = new Map(EDGE_PAIRS.map(([b, o]) => [`${b}-${o}`, jitterSet(rnd)]));
@@ -268,7 +281,7 @@ export function bakeTilePixels(seed = 20260811) {
     if (name.startsWith('edge:')) {
       const [, pair, m] = name.split(':');
       const [base, other] = pair.split('-');
-      paint = makeEdge(base, other, Number(m), seed, jitters.get(pair));
+      paint = makeEdge(base!, other!, Number(m), seed, jitters.get(pair)!);
     } else {
       // 기본 타일은 이름으로 시드를 고정 — 배치 순서를 바꿔도 그림이 안 변합니다.
       paint = makeBase(name, mulberry32((seed ^ hashName(name)) >>> 0));
@@ -279,7 +292,7 @@ export function bakeTilePixels(seed = 20260811) {
   return { width, height, data, uv };
 }
 
-function makeCanvas(w, h) {
+function makeCanvas(w: number, h: number): OffscreenCanvas | HTMLCanvasElement | null {
   if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
   if (typeof document !== 'undefined') {
     const c = document.createElement('canvas');
@@ -294,12 +307,13 @@ function makeCanvas(w, h) {
  * 계약 5.A의 진입점.
  * @returns {{canvas:any, uv:Record<string,number[]>, width:number, height:number, data:Uint8ClampedArray}}
  */
-export function bakeTileAtlas(seed = 20260811) {
+export function bakeTileAtlas(seed = 20260811): BakedTiles & { canvas: OffscreenCanvas | HTMLCanvasElement | null } {
   const baked = bakeTilePixels(seed);
   const canvas = makeCanvas(baked.width, baked.height);
   if (canvas) {
-    const ctx = canvas.getContext('2d');
-    ctx.putImageData(new ImageData(baked.data, baked.width, baked.height), 0, 0);
+    // OffscreenCanvas와 HTMLCanvasElement의 getContext 오버로드가 갈려 여기서만 좁힙니다.
+    const ctx = (canvas as HTMLCanvasElement).getContext('2d');
+    ctx?.putImageData(new ImageData(baked.data, baked.width, baked.height), 0, 0);
   }
   return { canvas, ...baked };
 }
