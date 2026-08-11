@@ -1,0 +1,40 @@
+/* 팔레트는 아잉 킷에서 가져오고 자연색을 더합니다. 계약 6절과 같은 값입니다. */
+:root {
+  --ice: #a8ddf0;
+  --lavender: #b8b0e8;
+  --cream: #f4f1ea;
+  --ink: #2e2a6b;
+  --blush: #f5c6d0;
+  --moss: #7fa65c;
+  --pine: #3e6b4a;
+  --bark: #7a5a42;
+  --soil: #5c4433;
+  --dusk: #e8a87c;
+  --ember: #f2814f;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000;
+  color: var(--cream);
+  font-family: 'DungGeunMo', 'Galmuri11', ui-monospace, 'SF Mono', monospace;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  overscroll-behavior: none;
+}
+
+/* 픽셀 에셋은 어디서든 흐려지면 안 됩니다. */
+img,
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
