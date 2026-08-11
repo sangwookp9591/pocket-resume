@@ -1,0 +1,68 @@
+/* 게임을 안 거치고 읽는 이력서. 픽셀 폰트를 쓰지 않습니다 —
+   여기 오는 사람은 놀러 온 게 아니라 읽으러 왔습니다. */
+
+.resume {
+  --fg: #23213f;
+  --muted: #6b6890;
+  --line: rgba(46, 42, 107, 0.14);
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8vh 24px 12vh;
+  background: #fbfaf7;
+  color: var(--fg);
+  font-family: ui-sans-serif, system-ui, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+body:has(.resume) { background: #fbfaf7; }
+
+.resume a { color: #4c47a8; text-underline-offset: 3px; }
+.resume h1 { margin: 0 0 12px; font-size: clamp(32px, 6vw, 44px); letter-spacing: -0.02em; }
+.resume h1 span { font-size: 0.45em; color: var(--muted); font-weight: 400; margin-left: 8px; letter-spacing: 0.08em; }
+.resume .eyebrow { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.24em; color: var(--muted); }
+.resume .tagline { margin: 0 0 20px; font-size: 17px; line-height: 1.85; }
+.resume .tagline strong { color: #2e2a6b; }
+
+.resume .links { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 6px; padding: 0; font-size: 14px; }
+
+.resume section { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--line); }
+.resume h2 { margin: 0 0 18px; font-size: 22px; letter-spacing: -0.01em; }
+.resume h2 small { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+.resume .note { margin: -8px 0 20px; font-size: 14px; color: var(--muted); }
+
+.chapter { margin: 0 0 34px; }
+.chapter h3 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 10px; font-size: 18px; }
+.chapter .n {
+  display: grid; place-items: center; flex: none; width: 26px; height: 26px;
+  background: #2e2a6b; color: #f4f1ea; border-radius: 50%; font-size: 13px;
+}
+.chapter .story { margin: 0 0 12px; white-space: pre-line; }
+.chapter .lesson {
+  margin: 0 0 10px; padding: 10px 16px; font-size: 15px;
+  background: rgba(168, 221, 240, 0.22); border-left: 3px solid #2e2a6b; border-radius: 0 6px 6px 0;
+}
+.chapter .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; font-size: 13px; color: var(--muted); }
+.chapter .badge { padding: 3px 10px; border-radius: 999px; color: #2b1a10; font-size: 12px; }
+.chapter .ev { margin-left: auto; font-size: 12px; opacity: 0.75; }
+
+.dexgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.dexcard { padding: 16px 18px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+.dexcard h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 16px; }
+.dexcard .no { font-size: 12px; color: var(--muted); }
+.dexcard .chip { margin-left: auto; padding: 2px 9px; font-size: 11px; border-radius: 999px; }
+.dexcard p { margin: 0 0 10px; font-size: 14px; line-height: 1.75; }
+.dexcard ul { list-style: none; display: flex; flex-wrap: wrap; gap: 5px; margin: 0; padding: 0; }
+.dexcard li { padding: 3px 9px; font-size: 12px; background: rgba(46, 42, 107, 0.07); border-radius: 999px; }
+
+.wiki { margin: 0 0 28px; }
+.wiki h3 { margin: 0 0 8px; font-size: 16px; }
+.wiki p { margin: 0; font-size: 15px; white-space: pre-line; }
+
+.resume footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+.resume footer .small { font-size: 13px; }
+
+@media print {
+  .resume { padding: 0; max-width: none; }
+  .resume section { break-inside: auto; }
+  .dexcard, .chapter { break-inside: avoid; }
+}
