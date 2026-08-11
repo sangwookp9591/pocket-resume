@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { initBattle, makeUnit, step, grantExp } from '../lib/game/battle.js';
-import { DialogueBox, TypeChip } from './ui.jsx';
+import { DialogueBox, TypeChip, PixelImg } from './ui.jsx';
 
 const MENU = [
   ['move', '기술'],
@@ -105,8 +105,7 @@ export default function Battle({ spec, party, onEnd }) {
 
   return (
     <div className="battle">
-      <img className="battle-bg" src={`/game/bg/battle-${st.bg}.webp`} alt="" aria-hidden
-        onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      <PixelImg className="battle-bg" src={`/game/bg/battle-${st.bg}.webp`} aria-hidden />
 
       <div className="field">
         <Slot unit={st.foe} foe />
@@ -151,8 +150,7 @@ function Slot({ unit, foe }) {
         <div className="hpbar"><i style={{ width: `${pct}%`, background: hue }} /></div>
         {!foe && <span className="hpnum">{unit.hp} / {unit.maxHp}</span>}
       </div>
-      <img className="sprite" src={`/game/mon/${unit.id}.webp`} alt={unit.mon.name} width={96} height={96}
-        onError={(e) => { e.currentTarget.style.opacity = 0.25; }} />
+      <PixelImg className="sprite" src={`/game/mon/${unit.id}.webp`} alt={unit.mon.name} width={96} height={96} />
     </div>
   );
 }

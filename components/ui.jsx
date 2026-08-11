@@ -8,6 +8,15 @@ import { MONS, TYPES, byId } from '../content/mons.js';
 import { BADGES } from '../content/journey.js';
 import { card } from '../lib/game/state.js';
 
+/* 아직 안 만들어진 에셋은 **깨진 이미지 아이콘 대신 아무것도** 보여 줍니다.
+   onError에서 style을 만지면 리렌더에 되살아나므로 상태로 기억합니다. */
+export function PixelImg({ src, alt = '', ...rest }) {
+  const [dead, setDead] = useState(false);
+  if (dead) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={alt} onError={() => setDead(true)} {...rest} />;
+}
+
 /* ── 대화창 ─────────────────────────────────────────────────────
    포켓몬의 그 창. 글자가 한 자씩 찍히고, 다 찍히기 전에 누르면 즉시 전부 나옵니다. */
 export function DialogueBox({ who, text, onNext, showNext = true, children }) {
@@ -152,8 +161,7 @@ export function Dex({ state, onClose }) {
             <>
               <h3>{cur.name} <small>{cur.en}</small></h3>
               <div className="row"><TypeChip t={cur.type} /><span className="where">{cur.where}번째 회사</span></div>
-              <img src={`/game/mon/${cur.id}.webp`} alt="" width={96} height={96}
-                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+              <PixelImg src={`/game/mon/${cur.id}.webp`} width={96} height={96} />
               <p className="dexline">{cur.dex}</p>
               <p className="flavor">“{cur.flavor}”</p>
               <ul className="moves">{cur.moves.map((mv) => <li key={mv}>{mv}</li>)}</ul>
@@ -214,8 +222,7 @@ export function TitleScreen({ onStart, hasSave, onContinue }) {
 
   return (
     <div className="title">
-      <img className="title-bg" src="/game/bg/title.webp" alt="" aria-hidden
-        onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      <PixelImg className="title-bg" src="/game/bg/title.webp" aria-hidden />
       <div className="title-inner">
         <p className="eyebrow">박상욱 · iron</p>
         <h1>포켓<span>레주메</span></h1>
@@ -241,8 +248,7 @@ export function HallOfFame({ state, onCredits }) {
       <ul className="hall-mons">
         {owned.map((m) => (
           <li key={m.id}>
-            <img src={`/game/mon/${m.id}.webp`} alt="" width={64} height={64}
-              onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+            <PixelImg src={`/game/mon/${m.id}.webp`} width={64} height={64} />
             <span>{m.name}</span>
           </li>
         ))}

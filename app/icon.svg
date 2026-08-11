@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <!-- 기술볼. 포켓볼의 문법만 빌리고 색은 아잉 팔레트입니다. -->
+  <circle cx="16" cy="16" r="14" fill="#F4F1EA" stroke="#2E2A6B" stroke-width="2"/>
+  <path d="M2 16a14 14 0 0 1 28 0z" fill="#A8DDF0"/>
+  <rect x="2" y="14" width="28" height="4" fill="#2E2A6B"/>
+  <circle cx="16" cy="16" r="5" fill="#F4F1EA" stroke="#2E2A6B" stroke-width="2"/>
+  <circle cx="16" cy="16" r="2" fill="#F2814F"/>
+</svg>
