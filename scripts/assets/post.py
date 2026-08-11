@@ -92,12 +92,12 @@ def main():
 
     if a.derive:
         frame2(im).save(a.out, lossless=True)
-        return
+        return report(Image.open(a.out))
 
     if a.mode == 'opaque':
         # 배경은 잘라내지 않고 정확한 규격으로 늘립니다. 화면을 꽉 채워야 하니까요.
         im.convert('RGB').resize((a.w, a.h), Image.LANCZOS).save(a.out, quality=82, method=6)
-        return
+        return report(Image.open(a.out))
 
     im = trim(dekey(im))
     im = fit(im, a.w * 4, a.h * 4, Image.LANCZOS)
@@ -110,6 +110,16 @@ def main():
             if al:
                 px[x, y] = (r, g, b, 255 if al > 96 else 0)
     place(im, a.w, a.h, a.align).save(a.out, lossless=True)
+    report(Image.open(a.out))
+
+
+def report(im):
+    """gen.mjs가 품질 게이트에 쓰는 한 줄. 불투명 픽셀 비율이 핵심입니다 —
+    0에 가까우면 키가 다 먹었고, 1이면 키가 하나도 안 먹은 것(둘 다 실패)."""
+    im = im.convert('RGBA')
+    a = im.getchannel('A')
+    opaque = sum(c for v, c in zip(range(256), a.histogram()) if v > 200)
+    print('{"w":%d,"h":%d,"fill":%.4f}' % (im.width, im.height, opaque / (im.width * im.height)))
 
 
 if __name__ == '__main__':

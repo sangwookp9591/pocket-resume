@@ -7,3 +7,5 @@ out
 .remember
 .world
 scripts/assets/raw
+
+.playwright-mcp

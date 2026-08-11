@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { initBattle, makeUnit, step, grantExp } from '../lib/game/battle.js';
+import { byId } from '../content/mons.js';
 import { DialogueBox, TypeChip, PixelImg } from './ui.jsx';
 
 const MENU = [
@@ -20,7 +21,7 @@ export default function Battle({ spec, party, onEnd }) {
       playerParty: party.length ? party : [makeUnit('spring', 5)],
       wild: makeUnit(spec.mon, spec.level ?? 5),
       scripted: spec.scripted ?? null,
-      intro: spec.intro ?? `야생의 ${spec.mon}이(가) 나타났다!`,
+      intro: spec.intro ?? `야생의 ${byId[spec.mon]?.name ?? spec.mon}(이)가 나타났다!`,
       bg: spec.bg ?? 1,
     }),
   );

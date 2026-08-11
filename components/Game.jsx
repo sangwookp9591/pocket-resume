@@ -16,8 +16,9 @@ import { drawWorld } from '../lib/game/draw.js';
 import { createWorld, camera } from '../lib/game/world.js';
 import { createRunner } from '../lib/game/runner.js';
 import { createState, load, save, clearSave, addMon, moveTo } from '../lib/game/state.js';
-import { SCRIPTS } from '../content/script.js';
+import { SCRIPTS, WILD_LINES } from '../content/script.js';
 import { MAPS } from '../content/maps.js';
+import { byId } from '../content/mons.js';
 import Battle from './Battle.jsx';
 import { DialogueBox, Choices, NameInput, Banner, Dex, Menu, TitleScreen, HallOfFame, TouchPad } from './ui.jsx';
 
@@ -90,7 +91,13 @@ export default function Game() {
     if (!e) return;
     if (e.kind === 'warp') return doWarp(e.warp);
     if (e.kind === 'encounter') {
-      return setBattle({ mon: e.mon, level: encounterLevel(getState()), bg: bgFor(worldRef.current?.map.id) });
+      return setBattle({
+        mon: e.mon,
+        level: encounterLevel(getState()),
+        bg: bgFor(worldRef.current?.map.id),
+        // 한국어 이름으로. 이걸 안 하면 "야생의 spring이 나타났다"가 뜹니다.
+        intro: WILD_LINES[e.mon] ?? `야생의 ${byId[e.mon]?.name ?? e.mon}(이)가 나타났다!`,
+      });
     }
     if (e.kind === 'script') {
       if (e.event?.once) setState({ ...getState(), flags: [...getState().flags, `ev.${e.script}`] });
