@@ -4,8 +4,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseMap, isSolid, tileAt, objAt, isEncounterTile } from '../../lib/engine/map.ts';
 import { MAPS, MAP_ORDER } from '../../content/maps.ts';
+import type { MapDef } from '../../content/types.ts';
 
-const tiny = (over) => ({
+/* 파서만 보는 최소 맵. MapDef의 나머지 필드는 파서가 기본값으로 채우고,
+   테스트가 보려는 건 레이어 검증(던지는가)뿐입니다.
+   전부 갖춰 쓰면 "무엇을 검사하는 테스트인지"가 안 보여서 여기서만 형을 느슨하게 둡니다. */
+const asMap = (o: unknown) => o as MapDef;
+const tiny = (over?: string) => ({
   id: 'tiny',
   ground: `
 ....
@@ -18,7 +23,7 @@ TT..
 ..g.
 ..d.`,
   legend: {},
-});
+} as unknown as MapDef);
 
 test('정상 맵을 파싱한다', () => {
   const m = parseMap(tiny());
@@ -51,24 +56,24 @@ test('풀숲만 인카운터 칸이다', () => {
 
 test('행 수가 다르면 던지고, 몇 행인지 말한다', () => {
   const def = { id: 'bad', ground: '\n....\n....', over: '\n....', legend: {} };
-  assert.throws(() => parseMap(def), /ground 2행 vs over 1행/);
+  assert.throws(() => parseMap(asMap(def)), /ground 2행 vs over 1행/);
 });
 
 test('열 수가 다르면 던지고, 몇 번째 줄이 몇 칸인지 말한다', () => {
   const def = { id: 'bad', ground: '\n....\n...', over: '\n....\n....', legend: {} };
-  assert.throws(() => parseMap(def), (e) => {
-    assert.match(e.message, /ground 1행: 3칸 \(기대 4칸\)/);
+  assert.throws(() => parseMap(asMap(def)), (e) => {
+    assert.match((e as Error).message, /ground 1행: 3칸 \(기대 4칸\)/);
     return true;
   });
 });
 
 test('범례에 없는 문자는 던진다 — 조용히 빈 칸이 되지 않게', () => {
-  assert.throws(() => parseMap({ id: 'bad', ground: '\n..\n..', over: '\n.Ω\n..', legend: {} }), /모르는 문자 "Ω"/);
-  assert.throws(() => parseMap({ id: 'bad', ground: '\n.!\n..', over: '\n..\n..', legend: {} }), /모르는 문자 "!"/);
+  assert.throws(() => parseMap(asMap({ id: 'bad', ground: '\n..\n..', over: '\n.Ω\n..', legend: {} })), /모르는 문자 "Ω"/);
+  assert.throws(() => parseMap(asMap({ id: 'bad', ground: '\n.!\n..', over: '\n..\n..', legend: {} })), /모르는 문자 "!"/);
 });
 
 test('legend 건물은 좌상단 기준으로 w×h만큼 충돌을 채운다', () => {
-  const m = parseMap({
+  const m = parseMap(asMap({
     id: 'bld',
     ground: `
 ......
@@ -79,7 +84,7 @@ test('legend 건물은 좌상단 기준으로 w×h만큼 충돌을 채운다', (
 ......
 ......`,
     legend: { H: { obj: 'bld-house', w: 3, h: 2 } },
-  });
+  }));
   for (let y = 0; y < 2; y++) for (let x = 1; x < 4; x++) assert.ok(isSolid(m, x, y), `(${x},${y})가 막혀야 합니다`);
   assert.ok(!isSolid(m, 4, 0), '건물 오른쪽 옆칸은 비어 있어야 합니다');
   assert.ok(!isSolid(m, 1, 2), '건물 아래칸은 비어 있어야 합니다');
@@ -93,16 +98,16 @@ test('맵 밖으로 넘치는 건물은 던진다', () => {
     over: '\n...H\n....',
     legend: { H: { obj: 'bld-house', w: 3, h: 2 } },
   };
-  assert.throws(() => parseMap(def), /밖으로 넘칩니다/);
+  assert.throws(() => parseMap(asMap(def)), /밖으로 넘칩니다/);
 });
 
 test('NPC가 선 칸도 막힌다', () => {
-  const m = parseMap({ ...tiny(), npcs: [{ id: 'x', x: 3, y: 1 }] });
+  const m = parseMap(asMap({ ...tiny(), npcs: [{ id: 'x', x: 3, y: 1 }] }));
   assert.ok(isSolid(m, 3, 1));
 });
 
 test('맵 밖 NPC는 던진다', () => {
-  assert.throws(() => parseMap({ ...tiny(), npcs: [{ id: 'x', x: 9, y: 1 }] }), /맵\(4×3\) 밖/);
+  assert.throws(() => parseMap(asMap({ ...tiny(), npcs: [{ id: 'x', x: 9, y: 1 }] })), /맵\(4×3\) 밖/);
 });
 
 // 실제 콘텐츠 8개가 전부 파싱되는지 — 계약과 데이터가 어긋나면 여기서 터집니다.

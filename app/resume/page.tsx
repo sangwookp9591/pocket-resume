@@ -3,6 +3,7 @@ import { MONS, TYPES } from '../../content/mons.ts';
 import { WIKI } from '../../content/wiki.ts';
 import { SITE } from '../../lib/markdown.ts';
 import { resumeJsonLd } from '../../lib/jsonld.ts';
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import './resume.css';
 
@@ -31,7 +32,8 @@ export default function Resume() {
           <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
           <li><a href={SITE.github}>GitHub</a></li>
           <li><a href="/iron.md">Markdown 전문</a></li>
-          <li><a href="/">게임으로 플레이 →</a></li>
+          {/* prefetch를 끕니다 — 게임 번들은 무겁고, 읽으러 온 사람이 다 클릭하지는 않습니다. */}
+          <li><Link href="/" prefetch={false}>게임으로 플레이 →</Link></li>
         </ul>
       </header>
 

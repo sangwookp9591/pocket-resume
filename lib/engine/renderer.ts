@@ -10,6 +10,66 @@
 
 import { WIDTH, HEIGHT } from './config.ts';
 
+/* ── 타입 ─────────────────────────────────────────────────────────
+   세 백엔드(WebGPU · WebGL2 · Canvas2D)의 API는 서로 겹치지 않습니다.
+   공개 인터페이스만 제대로 두고, 백엔드 안쪽 경계에서는 any를 씁니다 —
+   eslint.config.js가 lib/engine/**에 한해 no-explicit-any를 꺼 둔 이유입니다. */
+
+export type WipeKind = 'none' | 'spiral' | 'split' | 'fade';
+export type BackendName = 'webgpu' | 'webgl2' | 'canvas2d';
+
+/** 렌더러가 그리는 한 장. draw()가 이 모양으로 쌓고 present()가 정렬해 한 번에 냅니다. */
+export interface Instance {
+  seq: number; depth: number;
+  dx: number; dy: number; dw: number; dh: number;
+  u0: number; v0: number; u1: number; v1: number;
+  sway: number; alpha: number;
+}
+
+export interface DrawOpts {
+  flipX?: boolean;
+  depth?: number;
+  /** 참이면 정점 셰이더가 윗변만 좌우로 밉니다 (풀숲·나무) */
+  sway?: boolean | number;
+  alpha?: number;
+}
+
+export interface Renderer {
+  readonly backend: BackendName;
+  addTexture: (key: string, image: CanvasImageSource & { width: number; height: number }) => { x: number; y: number; w: number; h: number } | null;
+  begin: (camX?: number, camY?: number) => void;
+  draw: (
+    key: string, sx: number, sy: number, sw: number, sh: number,
+    dx: number, dy: number, dw: number, dh: number, opts?: DrawOpts,
+  ) => void;
+  present: () => void;
+  setTint: (rgba: readonly number[], strength?: number) => void;
+  setWipe: (kind?: WipeKind, t?: number) => void;
+  resize: (w: number, h: number) => void;
+  destroy: () => void;
+}
+
+/** 백엔드 하나. 세 구현이 이 모양만 맞추면 됩니다. */
+interface Backend {
+  name: BackendName;
+  upload: (atlas: any) => void;
+  flush: (data: Float32Array, count: number) => void;
+  resize: (w: number, h: number) => void;
+  destroy: () => void;
+}
+
+/** 백엔드가 공유하는 프레임 상태. */
+interface Core {
+  width: number; height: number;
+  camX: number; camY: number;
+  time: number;
+  tint: Float32Array;
+  strength: number;
+  wipe: { kind: WipeKind; t: number };
+  clearColor: () => number[];
+  onLost: () => void;
+}
+
 const ATLAS_SIZE = 2048;
 const FLOATS = 10; // dx,dy,dw,dh, u0,v0,u1,v1, sway, alpha
 export const SPIRAL_TURNS = 3.0;
@@ -17,7 +77,7 @@ export const WIPE_KINDS = { none: 0, spiral: 1, split: 2, fade: 3 };
 
 /* ── 순수 유틸 ─────────────────────────────────────────────────── */
 
-const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /** 선반(shelf) 팩커. 같은 순서로 넣으면 항상 같은 자리가 나옵니다. */
 export function createPacker(size = ATLAS_SIZE, pad = 1) {
@@ -26,7 +86,7 @@ export function createPacker(size = ATLAS_SIZE, pad = 1) {
   let rowH = 0;
   return {
     size,
-    add(w, h) {
+    add(w: number, h: number) {
       if (w > size || h > size) return null;
       if (x + w > size) {
         x = 0;
@@ -43,7 +103,7 @@ export function createPacker(size = ATLAS_SIZE, pad = 1) {
 }
 
 /** 정렬 키: depth → 발밑 y → 들어온 순서(안정). */
-export function compareInstances(a, b) {
+export function compareInstances(a: Instance, b: Instance): number {
   if (a.depth !== b.depth) return a.depth - b.depth;
   const ay = a.dy + a.dh;
   const by = b.dy + b.dh;
@@ -58,7 +118,7 @@ export function compareInstances(a, b) {
  * @param {number} u,v 화면 좌표 0..1
  * @returns {number} 0(안 덮임) 또는 1(덮임). fade만 연속값.
  */
-export function wipeCoverage(kind, t, u, v) {
+export function wipeCoverage(kind: WipeKind | string, t: number, u: number, v: number): number {
   if (kind === 'none' || t <= 0) return 0;
   if (t >= 1) return 1;
   if (kind === 'fade') return clamp01(t);
@@ -232,7 +292,7 @@ void main() {
 
 /* ── 아틀라스 ──────────────────────────────────────────────────── */
 
-function makeCanvas(w, h) {
+function makeCanvas(w: number, h: number): any {
   if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
   if (typeof document !== 'undefined') {
     const c = document.createElement('canvas');
@@ -245,7 +305,7 @@ function makeCanvas(w, h) {
 
 /* ── 백엔드 ────────────────────────────────────────────────────── */
 
-async function initWebGPU(canvas, core) {
+async function initWebGPU(canvas: HTMLCanvasElement, core: Core): Promise<Backend> {
   if (typeof navigator === 'undefined' || !navigator.gpu) throw new Error('WebGPU 없음');
   const adapter = await navigator.gpu.requestAdapter();
   if (!adapter) throw new Error('GPU 어댑터 없음');
@@ -267,7 +327,7 @@ async function initWebGPU(canvas, core) {
     ],
   });
   const layout = device.createPipelineLayout({ bindGroupLayouts: [bgl] });
-  const blend = {
+  const blend: GPUBlendState = {
     color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' },
     alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
   };
@@ -299,9 +359,9 @@ async function initWebGPU(canvas, core) {
     primitive: { topology: 'triangle-strip' },
   });
 
-  let texture = null;
-  let bindGroup = null;
-  let vbo = null;
+  let texture: GPUTexture | null = null;
+  let bindGroup: GPUBindGroup | null = null;
+  let vbo: GPUBuffer | null = null;
   let vboFloats = 0;
   let dead = false;
 
@@ -311,7 +371,7 @@ async function initWebGPU(canvas, core) {
     core.onLost();
   });
 
-  function upload(atlas) {
+  function upload(atlas: any) {
     texture?.destroy();
     texture = device.createTexture({
       size: [atlas.width, atlas.height],
@@ -343,7 +403,7 @@ async function initWebGPU(canvas, core) {
         vboFloats = Math.max(need, 1024);
         vbo = device.createBuffer({ size: vboFloats * 4, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
       }
-      if (count) device.queue.writeBuffer(vbo, 0, f32, 0, need);
+      if (count && vbo) device.queue.writeBuffer(vbo, 0, f32, 0, need);
 
       const u = new Float32Array(12);
       u.set([core.width, core.height, core.camX, core.camY, core.time, core.strength, WIPE_KINDS[core.wipe.kind] ?? 0, core.wipe.t], 0);
@@ -384,8 +444,8 @@ async function initWebGPU(canvas, core) {
   };
 }
 
-function compile(gl, vsSrc, fsSrc) {
-  const mk = (type, src) => {
+function compile(gl: any, vsSrc: string, fsSrc: string): any {
+  const mk = (type: number, src: string) => {
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
@@ -402,7 +462,7 @@ function compile(gl, vsSrc, fsSrc) {
   return p;
 }
 
-async function initWebGL2(canvas, core) {
+async function initWebGL2(canvas: HTMLCanvasElement, core: Core): Promise<Backend> {
   const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, preserveDrawingBuffer: false });
   if (!gl) throw new Error('WebGL2 없음');
 
@@ -435,11 +495,11 @@ async function initWebGL2(canvas, core) {
   gl.bindVertexArray(null);
 
   const wipeVao = gl.createVertexArray(); // 빈 VAO — gl_VertexID만 씁니다
-  let tex = null;
+  let tex: WebGLTexture | null = null;
   let capacity = 0;
   let dead = false;
 
-  const onLost = (e) => {
+  const onLost = (e: Event) => {
     e.preventDefault();
     if (dead) return;
     console.warn('[renderer] WebGL2 컨텍스트 로스트 — 복구를 시도합니다');
@@ -514,11 +574,12 @@ async function initWebGL2(canvas, core) {
   };
 }
 
-async function initCanvas2D(canvas, core) {
+async function initCanvas2D(canvas: HTMLCanvasElement, core: Core): Promise<Backend> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2d 컨텍스트 없음');
   ctx.imageSmoothingEnabled = false;
-  let atlas = null;
+  // 실제로 들어오는 것은 캔버스나 ImageBitmap뿐입니다 — 둘 다 width/height가 있습니다.
+  let atlas: (CanvasImageSource & { width: number; height: number }) | null = null;
 
   return {
     name: 'canvas2d',
@@ -598,7 +659,7 @@ async function initCanvas2D(canvas, core) {
 }
 
 /** Canvas2D 와이프 근사. 픽셀마다 wipeCoverage를 부르면 느립니다 — 도형으로 그립니다. */
-function drawWipe2D(ctx, W, H, wipe) {
+function drawWipe2D(ctx: any, W: number, H: number, wipe: { kind: WipeKind; t: number }): void {
   const { kind, t } = wipe;
   if (kind === 'none' || t <= 0) return;
   ctx.fillStyle = '#000';
@@ -642,8 +703,11 @@ function drawWipe2D(ctx, W, H, wipe) {
  * @param {HTMLCanvasElement} canvas
  * @param {{width?:number, height?:number}} size 논리 해상도. 기본값은 config.js의 512×352.
  */
-export async function createRenderer(canvas, { width = WIDTH, height = HEIGHT } = {}) {
-  const core = {
+export async function createRenderer(
+  canvas: HTMLCanvasElement,
+  { width = WIDTH, height = HEIGHT }: { width?: number; height?: number } = {},
+): Promise<Renderer> {
+  const core: Core = {
     width,
     height,
     camX: 0,
@@ -671,7 +735,8 @@ export async function createRenderer(canvas, { width = WIDTH, height = HEIGHT } 
   canvas.height = height;
 
   const CHAIN = [initWebGPU, initWebGL2, initCanvas2D];
-  let backend = null;
+  // boot()는 못 만들면 던집니다 — null이 남을 수 없습니다.
+  let backend!: Backend;
   let backendIdx = 0;
   let destroyed = false;
   let recovering = false;
@@ -679,13 +744,13 @@ export async function createRenderer(canvas, { width = WIDTH, height = HEIGHT } 
   async function boot(from = 0) {
     for (let i = from; i < CHAIN.length; i++) {
       try {
-        const b = await CHAIN[i](canvas, core);
+        const b = await CHAIN[i]!(canvas, core);
         b.upload(atlas);
         b.resize(canvas.width, canvas.height);
         backendIdx = i;
         return b;
       } catch (e) {
-        console.warn(`[renderer] ${CHAIN[i].name} 실패 → 다음 백엔드로:`, e?.message ?? e);
+        console.warn(`[renderer] ${CHAIN[i]!.name} 실패 → 다음 백엔드로:`, (e as Error)?.message ?? e);
       }
     }
     throw new Error('renderer: 쓸 수 있는 백엔드가 없습니다');
@@ -712,7 +777,7 @@ export async function createRenderer(canvas, { width = WIDTH, height = HEIGHT } 
   };
 
   // 인스턴스 기록. 프레임마다 새로 만들지 않고 풀에서 꺼내 씁니다.
-  const pool = [];
+  const pool: Instance[] = [];
   let count = 0;
   let f32 = new Float32Array(1024 * FLOATS);
   const missing = new Set();
@@ -723,7 +788,7 @@ export async function createRenderer(canvas, { width = WIDTH, height = HEIGHT } 
     },
 
     /** 아틀라스에 등록. 같은 key를 다시 주면 덮어씁니다. */
-    addTexture(key, image) {
+    addTexture(key: string, image: CanvasImageSource & { width: number; height: number }) {
       const w = image.width;
       const h = image.height;
       let r = rects.get(key);
@@ -759,7 +824,7 @@ export async function createRenderer(canvas, { width = WIDTH, height = HEIGHT } 
         }
         return;
       }
-      const rec = pool[count] ?? (pool[count] = {});
+      const rec = pool[count] ?? (pool[count] = {} as Instance);
       const aw = ATLAS_SIZE;
       const u0 = (r.x + sx) / aw;
       const u1 = (r.x + sx + sw) / aw;

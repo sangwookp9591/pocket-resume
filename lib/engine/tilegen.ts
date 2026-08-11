@@ -313,7 +313,7 @@ export function bakeTileAtlas(seed = 20260811): BakedTiles & { canvas: Offscreen
   if (canvas) {
     // OffscreenCanvas와 HTMLCanvasElement의 getContext 오버로드가 갈려 여기서만 좁힙니다.
     const ctx = (canvas as HTMLCanvasElement).getContext('2d');
-    ctx?.putImageData(new ImageData(baked.data, baked.width, baked.height), 0, 0);
+    ctx?.putImageData(new ImageData(baked.data as unknown as Uint8ClampedArray<ArrayBuffer>, baked.width, baked.height), 0, 0);
   }
   return { canvas, ...baked };
 }

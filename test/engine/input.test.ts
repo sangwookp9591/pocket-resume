@@ -4,22 +4,33 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInput } from '../../lib/engine/input.ts';
 
+type Listener = (e: Record<string, unknown>) => void;
+
+/** 브라우저 없이 리스너만 받아 두는 가짜 요소. createInput은 이것만 있으면 됩니다. */
 function fakeEl() {
-  const ls = new Map();
+  const ls = new Map<string, Listener[]>();
   return {
-    addEventListener: (ev, fn) => ls.set(ev, [...(ls.get(ev) ?? []), fn]),
-    removeEventListener: (ev, fn) => ls.set(ev, (ls.get(ev) ?? []).filter((f) => f !== fn)),
-    fire: (ev, e = {}) => (ls.get(ev) ?? []).forEach((f) => f({ preventDefault() {}, ...e })),
-    count: (ev) => (ls.get(ev) ?? []).length,
+    ownerDocument: undefined,
+    addEventListener: (ev: string, fn: Listener) => ls.set(ev, [...(ls.get(ev) ?? []), fn]),
+    removeEventListener: (ev: string, fn: Listener) =>
+      ls.set(ev, (ls.get(ev) ?? []).filter((f) => f !== fn)),
+    fire: (ev: string, e: Record<string, unknown> = {}) =>
+      (ls.get(ev) ?? []).forEach((f) => f({ preventDefault() {}, ...e })),
+    count: (ev: string) => (ls.get(ev) ?? []).length,
   };
 }
+type FakeEl = ReturnType<typeof fakeEl>;
 
-const down = (el, code) => el.fire('keydown', { code });
-const up = (el, code) => el.fire('keyup', { code });
+/* createInput은 HTMLElement를 받지만 실제로 쓰는 것은 리스너 등록뿐입니다.
+   jsdom을 끌어오는 대신 여기서만 형을 맞춥니다. */
+const asEl = (el: FakeEl) => el as unknown as HTMLElement;
+
+const down = (el: FakeEl, code: string) => el.fire('keydown', { code });
+const up = (el: FakeEl, code: string) => el.fire('keyup', { code });
 
 test('키를 누르면 dir가 래치되고 dirHeld가 선다', () => {
   const el = fakeEl();
-  const inp = createInput(el);
+  const inp = createInput(asEl(el));
   down(el, 'ArrowRight');
   assert.equal(inp.dir, 'right');
   assert.equal(inp.dirHeld, 'right');
@@ -32,7 +43,7 @@ test('키를 누르면 dir가 래치되고 dirHeld가 선다', () => {
 
 test('WASD도 같은 축으로 들어온다', () => {
   const el = fakeEl();
-  const inp = createInput(el);
+  const inp = createInput(asEl(el));
   down(el, 'KeyW');
   assert.equal(inp.dirHeld, 'up');
   down(el, 'KeyA');
@@ -43,7 +54,7 @@ test('WASD도 같은 축으로 들어온다', () => {
 
 test('키 반복(e.repeat)은 무시한다', () => {
   const el = fakeEl();
-  const inp = createInput(el);
+  const inp = createInput(asEl(el));
   down(el, 'ArrowUp');
   inp.consume();
   el.fire('keydown', { code: 'ArrowUp', repeat: true });
@@ -52,7 +63,7 @@ test('키 반복(e.repeat)은 무시한다', () => {
 
 test('confirm·cancel·menu는 1회 래치, run은 눌린 상태 그대로', () => {
   const el = fakeEl();
-  const inp = createInput(el);
+  const inp = createInput(asEl(el));
   down(el, 'Space');
   assert.equal(inp.confirm, true);
   inp.consume();
@@ -74,7 +85,7 @@ test('confirm·cancel·menu는 1회 래치, run은 눌린 상태 그대로', () 
 
 test('blur에서 전부 놓는다 — 탭 전환 후 계속 걷는 버그', () => {
   const el = fakeEl();
-  const inp = createInput(el);
+  const inp = createInput(asEl(el));
   down(el, 'ArrowDown');
   down(el, 'ShiftLeft');
   el.fire('blur');
@@ -84,7 +95,7 @@ test('blur에서 전부 놓는다 — 탭 전환 후 계속 걷는 버그', () =
 
 test('모르는 키는 무시한다', () => {
   const el = fakeEl();
-  const inp = createInput(el);
+  const inp = createInput(asEl(el));
   down(el, 'KeyQ');
   assert.equal(inp.dirHeld, null);
   assert.equal(inp.confirm, false);
@@ -92,7 +103,7 @@ test('모르는 키는 무시한다', () => {
 
 test('터치: 끌면 방향, 끌지 않은 탭은 확인', () => {
   const el = fakeEl();
-  const inp = createInput(el);
+  const inp = createInput(asEl(el));
   el.fire('pointerdown', { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 });
   el.fire('pointermove', { pointerId: 1, clientX: 100, clientY: 140 });
   assert.equal(inp.dirHeld, 'down');
@@ -107,7 +118,7 @@ test('터치: 끌면 방향, 끌지 않은 탭은 확인', () => {
 
 test('destroy가 리스너를 남기지 않는다', () => {
   const el = fakeEl();
-  const inp = createInput(el);
+  const inp = createInput(asEl(el));
   assert.ok(el.count('keydown') > 0);
   inp.destroy();
   assert.equal(el.count('keydown'), 0);

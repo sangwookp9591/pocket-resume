@@ -9,8 +9,7 @@ import { TILE, CHAR_W, CHAR_H, MON_SIZE } from '../engine/config.ts';
 import { PALETTE } from '../engine/palette.ts';
 import { MONS } from '../../content/mons.ts';
 import type { Dir } from '../../content/types.ts';
-
-type Renderer = { addTexture: (key: string, image: CanvasImageSource) => unknown };
+import type { Renderer } from '../engine/renderer.ts';
 type Kind = 'char' | 'obj' | 'mon' | 'bg';
 
 /** 에셋 한 장의 규격. 로딩과 자리표시자가 같은 표를 봅니다. */

@@ -3,14 +3,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createPacker, compareInstances, wipeCoverage, WIPE_KINDS, SPIRAL_TURNS } from '../../lib/engine/renderer.ts';
+import type { Instance } from '../../lib/engine/renderer.ts';
 
 test('팩커는 겹치지 않게 자리를 준다', () => {
   const p = createPacker(64, 1);
-  const rs = [p.add(32, 32), p.add(31, 32), p.add(32, 16)];
+  const rs = [p.add(32, 32)!, p.add(31, 32)!, p.add(32, 16)!];
   assert.deepEqual(rs[0], { x: 0, y: 0, w: 32, h: 32 });
   assert.deepEqual(rs[1], { x: 33, y: 0, w: 31, h: 32 });
   assert.equal(rs[2].y, 33, '다음 선반으로 내려가야 합니다');
-  const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  type Rect = { x: number; y: number; w: number; h: number };
+  const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
   assert.ok(!overlap(rs[0], rs[1]) && !overlap(rs[1], rs[2]) && !overlap(rs[0], rs[2]));
 });
 
@@ -22,7 +24,9 @@ test('팩커는 넘치면 null을 준다 — 조용히 0,0에 겹쳐 찍지 않�
 });
 
 test('정렬은 depth → 발밑 y → 들어온 순서', () => {
-  const inst = (seq, depth, dy, dh) => ({ seq, depth, dy, dh });
+  // compareInstances가 실제로 보는 네 필드만 채웁니다.
+  const inst = (seq: number, depth: number, dy: number, dh: number) =>
+    ({ seq, depth, dy, dh }) as Instance;
   const list = [inst(0, 1, 10, 32), inst(1, 0, 200, 32), inst(2, 1, 5, 32), inst(3, 1, 10, 32)];
   const sorted = [...list].sort(compareInstances).map((i) => i.seq);
   assert.deepEqual(sorted, [1, 2, 0, 3]);
@@ -30,8 +34,8 @@ test('정렬은 depth → 발밑 y → 들어온 순서', () => {
 
 test('발밑 기준이라 키 큰 스프라이트가 아래 것을 가리지 않는다', () => {
   // 32×48 캐릭터(위로 16px 넘침)와 그 아래 타일: dy는 캐릭터가 작지만 발밑은 같습니다.
-  const hero = { seq: 0, depth: 1, dy: 100, dh: 48 };
-  const bush = { seq: 1, depth: 1, dy: 148, dh: 32 };
+  const hero = { seq: 0, depth: 1, dy: 100, dh: 48 } as Instance;
+  const bush = { seq: 1, depth: 1, dy: 148, dh: 32 } as Instance;
   assert.ok(compareInstances(hero, bush) < 0, '아래에 있는 풀숲이 나중에 그려져야 합니다');
 });
 
@@ -60,7 +64,7 @@ test('wipe split은 위아래에서 닫힌다', () => {
 });
 
 test('wipe spiral은 가운데부터 단조 증가로 덮인다', () => {
-  const center = [0.5, 0.5];
+  const center: [number, number] = [0.5, 0.5];
   assert.equal(wipeCoverage('spiral', 0.5, ...center), 1, '가운데는 절반쯤에 이미 덮임');
   // 같은 점에서 t가 커질 때 한 번 덮이면 다시 벗겨지지 않아야 합니다.
   for (const [u, v] of [[0.2, 0.3], [0.9, 0.1], [0.5, 0.8]]) {
@@ -76,8 +80,9 @@ test('wipe spiral은 가운데부터 단조 증가로 덮인다', () => {
 
 test('spiral은 각도에 따라 덮이는 시점이 달라진다 — 그래서 소용돌이', () => {
   const r = 0.25; // 중심에서 같은 거리, 각도만 다른 두 점
-  const p = (deg) => [0.5 + r * Math.cos((deg * Math.PI) / 180), 0.5 + r * Math.sin((deg * Math.PI) / 180)];
-  const first = (uv) => {
+  const p = (deg: number): [number, number] =>
+    [0.5 + r * Math.cos((deg * Math.PI) / 180), 0.5 + r * Math.sin((deg * Math.PI) / 180)];
+  const first = (uv: [number, number]) => {
     for (let t = 0; t <= 1; t += 0.005) if (wipeCoverage('spiral', t, ...uv)) return t;
     return 1;
   };

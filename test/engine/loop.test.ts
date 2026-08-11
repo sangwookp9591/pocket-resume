@@ -4,15 +4,15 @@ import assert from 'node:assert/strict';
 import { createLoop, STEP_MS, MAX_ACC_MS } from '../../lib/engine/loop.ts';
 
 function harness() {
-  const steps = [];
-  const alphas = [];
+  const steps: number[] = [];
+  const alphas: number[] = [];
   let id = 0;
-  const pending = [];
+  const pending: Array<(t: number) => void> = [];
   const loop = createLoop({
-    update: (dt) => steps.push(dt),
-    render: (a) => alphas.push(a),
+    update: (dt: number) => { steps.push(dt); },
+    render: (a: number) => { alphas.push(a); },
     now: () => 0,
-    raf: (cb) => {
+    raf: (cb: (t: number) => void) => {
       pending.push(cb);
       return ++id;
     },

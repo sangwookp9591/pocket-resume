@@ -76,7 +76,10 @@ const TOUCH_DEAD = 16; // 이만큼 끌어야 방향으로 칩니다 (px)
  *   confirm/cancel/menu — 눌린 순간 1회(래치), run — 눌린 상태 그대로.
  */
 export function createInput(el: HTMLElement | null): Input {
-  const win: Window | null = el?.ownerDocument?.defaultView ?? (typeof window !== 'undefined' ? window : null);
+  /* window가 없으면 el 자신에게 키보드를 붙입니다 — 이 폴백이 있어야 node에서 테스트됩니다.
+     타입을 붙이면서 없앴다가 입력 테스트 4개가 깨졌습니다. */
+  const win: EventTarget | null =
+    el?.ownerDocument?.defaultView ?? (typeof window !== 'undefined' ? window : el);
   const held = new Set<Action>(); // 눌려 있는 액션
   const stack: Dir[] = []; // 방향만, 누른 순서. 마지막이 우선.
   const latched: { dir: Dir | null; confirm: boolean; cancel: boolean; menu: boolean } =

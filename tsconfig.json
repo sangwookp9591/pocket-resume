@@ -31,7 +31,8 @@
       ]
     },
     "types": [
-      "node"
+      "node",
+      "@webgpu/types"
     ],
     "plugins": [
       {

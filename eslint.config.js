@@ -13,7 +13,7 @@ import next from '@next/eslint-plugin-next';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['.next/**', 'node_modules/**', 'out/**', 'scripts/assets/raw/**', 'next-env.d.ts'] },
+  { ignores: ['.next/**', 'node_modules/**', 'out/**', 'scripts/assets/raw/**', 'next-env.d.ts', '.remember/**', '.world/**'] },
 
   js.configs.recommended,
   ...tseslint.configs.recommended,

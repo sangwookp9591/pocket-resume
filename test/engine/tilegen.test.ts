@@ -19,7 +19,7 @@ test('config가 계약 3절 화면 규격 그대로다', () => {
   assert.equal(TILE, config.TILE, 'tilegen이 config를 봐야 합니다');
 });
 
-const hash = (d) => createHash('sha256').update(Buffer.from(d.buffer, d.byteOffset, d.byteLength)).digest('hex');
+const hash = (d: Uint8ClampedArray) => createHash('sha256').update(Buffer.from(d.buffer, d.byteOffset, d.byteLength)).digest('hex');
 
 test('같은 시드 → 같은 픽셀', () => {
   const a = bakeTilePixels(1234);

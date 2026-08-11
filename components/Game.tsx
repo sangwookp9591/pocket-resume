@@ -162,14 +162,16 @@ export default function Game() {
     let dead = false;
 
     (async () => {
-      const r = await createRenderer(canvasRef.current, { width: WIDTH, height: HEIGHT });
+      const cv = canvasRef.current;
+      if (!cv) return; // 씬이 바뀌어 캔버스가 사라졌으면 조용히 그만둡니다
+      const r = await createRenderer(cv, { width: WIDTH, height: HEIGHT });
       if (dead) return r.destroy();
       rendererRef.current = r;
       const res = await loadAssets(r, { onProgress: (n: number, t: number) => setBoot((b) => ({ ...b, pct: n / t })) });
       if (dead) return r.destroy();
       setBoot({ done: true, pct: 1, backend: r.backend, missing: res.placeholder.length });
 
-      const input = createInput(canvasRef.current);
+      const input = createInput(cv);
       inputRef.current = input;
 
       const loop = createLoop({
