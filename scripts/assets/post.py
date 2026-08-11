@@ -47,10 +47,19 @@ def trim(im):
     return im.crop(box) if box else im
 
 
-def fit(im, w, h, resample):
-    """비율을 지키며 w×h 안에 들어가게. 최소 1px."""
+def target(im, w, h, stretch):
+    """w×h 상자 안에 넣을 최종 크기.
+
+    비율대로 맞추면 오브젝트가 자기 타일 발자국을 다 못 채웁니다 —
+    4타일짜리 건물이 3타일만 차지하면 옆구리에 안 보이는 벽이 생깁니다.
+    그래서 오브젝트만 stretch배까지 가로로 늘려 폭을 채웁니다(계약 5.D: 폭은 타일 배수).
+    캐릭터·기술몬은 stretch=1 — 사람을 옆으로 늘리면 바로 티가 납니다.
+    """
     s = min(w / im.width, h / im.height)
-    return im.resize((max(1, round(im.width * s)), max(1, round(im.height * s))), resample)
+    fw, fh = im.width * s, im.height * s
+    if stretch > 1:
+        fw = min(w, fw * stretch)
+    return max(1, round(fw)), max(1, round(fh))
 
 
 def place(im, w, h, align):
@@ -85,6 +94,7 @@ def main():
     p.add_argument('--h', type=int, required=True)
     p.add_argument('--mode', choices=['cutout', 'opaque'], default='cutout')
     p.add_argument('--align', choices=['bottom', 'center'], default='bottom')
+    p.add_argument('--stretch', type=float, default=1.0, help='폭을 채우기 위한 가로 확대 상한')
     p.add_argument('--derive', action='store_true', help='src를 걷기 2프레임으로 변형 (축소 없음)')
     a = p.parse_args()
 
@@ -100,8 +110,9 @@ def main():
         return report(Image.open(a.out))
 
     im = trim(dekey(im))
-    im = fit(im, a.w * 4, a.h * 4, Image.LANCZOS)
-    im = fit(im, a.w, a.h, Image.NEAREST)
+    tw, th = target(im, a.w, a.h, a.stretch)
+    im = im.resize((tw * 4, th * 4), Image.LANCZOS)  # 2단계 축소: 먼저 목표의 4배까지
+    im = im.resize((tw, th), Image.NEAREST)          # 그다음 니어리스트로 목표까지
     # 니어리스트 축소가 만든 반투명 픽셀을 이진화합니다 — 안 하면 확대 시 흐린 테두리가 생깁니다.
     px = im.load()
     for y in range(im.height):

@@ -287,24 +287,6 @@
       "fill": 0.5795
     },
     {
-      "id": "obj/bld-lab",
-      "path": "public/game/obj/bld-lab.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 12964,
-      "fill": 0.5183
-    },
-    {
-      "id": "obj/bld-house",
-      "path": "public/game/obj/bld-house.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 7460,
-      "fill": 0.6131
-    },
-    {
       "id": "mon/java",
       "path": "public/game/mon/java.webp",
       "ok": true,
@@ -312,139 +294,6 @@
       "model": "nano_banana_flash",
       "bytes": 9914,
       "fill": 0.7127
-    },
-    {
-      "id": "obj/bld-office-3",
-      "path": "public/game/obj/bld-office-3.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 14298,
-      "fill": 0.6296
-    },
-    {
-      "id": "obj/bld-office-1",
-      "path": "public/game/obj/bld-office-1.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 13888,
-      "fill": 0.6528
-    },
-    {
-      "id": "obj/bld-tower",
-      "path": "public/game/obj/bld-tower.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 17852,
-      "fill": 0.4483
-    },
-    {
-      "id": "obj/tree",
-      "path": "public/game/obj/tree.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "—",
-      "note": "skip(이미 있음)"
-    },
-    {
-      "id": "obj/tree-small",
-      "path": "public/game/obj/tree-small.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "—",
-      "note": "skip(이미 있음)"
-    },
-    {
-      "id": "obj/bld-gym",
-      "path": "public/game/obj/bld-gym.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 14118,
-      "fill": 0.5771
-    },
-    {
-      "id": "obj/rock",
-      "path": "public/game/obj/rock.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1808,
-      "fill": 0.7041
-    },
-    {
-      "id": "obj/bld-cafe",
-      "path": "public/game/obj/bld-cafe.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 6352,
-      "fill": 0.4878
-    },
-    {
-      "id": "obj/bush",
-      "path": "public/game/obj/bush.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1788,
-      "fill": 0.6084
-    },
-    {
-      "id": "obj/sign",
-      "path": "public/game/obj/sign.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1016,
-      "fill": 0.416
-    },
-    {
-      "id": "obj/fence",
-      "path": "public/game/obj/fence.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1174,
-      "fill": 0.4248
-    },
-    {
-      "id": "obj/flower",
-      "path": "public/game/obj/flower.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1764,
-      "fill": 0.5439
-    },
-    {
-      "id": "obj/mailbox",
-      "path": "public/game/obj/mailbox.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1176,
-      "fill": 0.4834
-    },
-    {
-      "id": "obj/lamp",
-      "path": "public/game/obj/lamp.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 604,
-      "fill": 0.1021
-    },
-    {
-      "id": "obj/bld-office-2",
-      "path": "public/game/obj/bld-office-2.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 16602,
-      "fill": 0.7728
     },
     {
       "id": "bg/battle-1",
@@ -462,33 +311,6 @@
       "model": "nano_banana_flash",
       "bytes": 18642,
       "fill": 1
-    },
-    {
-      "id": "obj/shelf",
-      "path": "public/game/obj/shelf.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 3230,
-      "fill": 0.8403
-    },
-    {
-      "id": "obj/campfire",
-      "path": "public/game/obj/campfire.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1538,
-      "fill": 0.5957
-    },
-    {
-      "id": "obj/desk",
-      "path": "public/game/obj/desk.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1560,
-      "fill": 0.2925
     },
     {
       "id": "bg/battle-5",
@@ -578,6 +400,186 @@
       "model": "derive",
       "bytes": 1914,
       "fill": 0.5423
+    },
+    {
+      "id": "obj/bld-house",
+      "path": "public/game/obj/bld-house.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 8556,
+      "fill": 0.73
+    },
+    {
+      "id": "obj/bld-office-2",
+      "path": "public/game/obj/bld-office-2.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 18058,
+      "fill": 0.831
+    },
+    {
+      "id": "obj/bld-lab",
+      "path": "public/game/obj/bld-lab.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 15432,
+      "fill": 0.6431
+    },
+    {
+      "id": "obj/bld-office-1",
+      "path": "public/game/obj/bld-office-1.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 16558,
+      "fill": 0.7974
+    },
+    {
+      "id": "obj/bld-office-3",
+      "path": "public/game/obj/bld-office-3.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 16122,
+      "fill": 0.7367
+    },
+    {
+      "id": "obj/bld-gym",
+      "path": "public/game/obj/bld-gym.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 16450,
+      "fill": 0.7096
+    },
+    {
+      "id": "obj/bld-tower",
+      "path": "public/game/obj/bld-tower.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 23094,
+      "fill": 0.6264
+    },
+    {
+      "id": "obj/bld-cafe",
+      "path": "public/game/obj/bld-cafe.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 8134,
+      "fill": 0.6854
+    },
+    {
+      "id": "obj/tree-small",
+      "path": "public/game/obj/tree-small.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1966,
+      "fill": 0.7051
+    },
+    {
+      "id": "obj/rock",
+      "path": "public/game/obj/rock.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1808,
+      "fill": 0.7041
+    },
+    {
+      "id": "obj/tree",
+      "path": "public/game/obj/tree.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 4658,
+      "fill": 0.5171
+    },
+    {
+      "id": "obj/bush",
+      "path": "public/game/obj/bush.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1888,
+      "fill": 0.6152
+    },
+    {
+      "id": "obj/fence",
+      "path": "public/game/obj/fence.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1190,
+      "fill": 0.46
+    },
+    {
+      "id": "obj/sign",
+      "path": "public/game/obj/sign.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1358,
+      "fill": 0.5791
+    },
+    {
+      "id": "obj/flower",
+      "path": "public/game/obj/flower.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1702,
+      "fill": 0.5439
+    },
+    {
+      "id": "obj/lamp",
+      "path": "public/game/obj/lamp.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 794,
+      "fill": 0.1401
+    },
+    {
+      "id": "obj/mailbox",
+      "path": "public/game/obj/mailbox.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1464,
+      "fill": 0.6416
+    },
+    {
+      "id": "obj/shelf",
+      "path": "public/game/obj/shelf.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 3828,
+      "fill": 0.8442
+    },
+    {
+      "id": "obj/campfire",
+      "path": "public/game/obj/campfire.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1568,
+      "fill": 0.5928
+    },
+    {
+      "id": "obj/desk",
+      "path": "public/game/obj/desk.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "repost",
+      "bytes": 1978,
+      "fill": 0.3989
     }
   ]
 }

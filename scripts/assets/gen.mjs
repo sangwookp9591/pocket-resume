@@ -43,6 +43,9 @@ const force = new Set(list('--force'));
 const only = list('--only');
 const JOBS = num('--jobs', 4);
 const DRY = flag('--dry');
+/* 원본 PNG가 남아 있으면 다시 생성하지 않고 후처리만 다시 합니다.
+   post.py를 고쳤을 때 크레딧 0으로 전부 다시 굽는 길입니다. */
+const REPOST = flag('--repost');
 
 let spent = 0;
 let halted = false;
@@ -66,12 +69,16 @@ function charge(model) {
 
 const exists = (p) => stat(p).then((s) => s.size > 0, () => false);
 
+const rawOf = (id) => join(RAW, `${id.replace('/', '_')}.png`);
+
 /** higgsfield는 job 배열을 뱉습니다. 첫 결과의 result_url만 씁니다. */
 async function generate(a) {
   const args = ['generate', 'create', a.model, '--prompt', a.prompt,
     '--aspect_ratio', a.ar, '--wait', '--json'];
   if (a.model === 'nano_banana_flash') args.push('--resolution', '1k');
-  if (a.ref) args.push('--image-references', a.ref);
+  // refFrom: 다른 에셋의 **원본 PNG**를 참조로 씁니다. 32×48 결과물은 참조로 쓰기엔 너무 작습니다.
+  const ref = a.ref ?? (a.refFrom ? rawOf(a.refFrom) : null);
+  if (ref) args.push('--image-references', ref);
 
   const { stdout } = await run('higgsfield', args, { maxBuffer: 64 << 20, timeout: 15 * 60_000 });
   const jobs = JSON.parse(stdout.slice(stdout.indexOf('[')));
@@ -90,7 +97,8 @@ async function post(src, out, a, derive = false) {
   const args = [join(HERE, 'post.py'), '--src', src, '--out', out,
     '--w', String(a.w), '--h', String(a.h),
     '--mode', a.transparent ? 'cutout' : 'opaque',
-    '--align', a.align ?? 'bottom'];
+    '--align', a.align ?? 'bottom',
+    '--stretch', String(a.stretch ?? 1)];
   if (derive) args.push('--derive');
   const { stdout } = await run('python3', args, { timeout: 120_000 });
   return JSON.parse(stdout.trim().split('\n').pop());
@@ -108,7 +116,7 @@ async function makeOne(a) {
   const out = join(ROOT, a.path);
   await mkdir(dirname(out), { recursive: true });
 
-  if (!force.has(a.id) && (await exists(out))) {
+  if (!REPOST && !force.has(a.id) && (await exists(out))) {
     log.set(a.id, { id: a.id, path: a.path, ok: true, attempts: 0, model: '—', note: 'skip(이미 있음)' });
     line(`· ${a.id} — 건너뜀 (이미 있음)`);
     return;
@@ -126,7 +134,18 @@ async function makeOne(a) {
     return;
   }
 
-  const raw = join(RAW, `${a.id.replace('/', '_')}.png`);
+  const raw = rawOf(a.id);
+
+  // --repost: 원본이 남아 있으면 후처리만 다시. post.py를 고쳤을 때 쓰는 길이라 크레딧 0.
+  if (REPOST && (await exists(raw))) {
+    const st = await post(raw, out, a);
+    gate(a, st);
+    const { size } = await stat(out);
+    log.set(a.id, { id: a.id, path: a.path, ok: true, attempts: 0, model: 'repost', bytes: size, fill: st.fill });
+    line(`✓ ${a.id} — 원본에서 후처리만 · ${size}B`);
+    return;
+  }
+
   let err;
   for (let t = 1; t <= TRIES; t++) {
     if (!charge(a.model)) { err = new Error(`크레딧 상한(${STOP}) 도달 — 시작하지 않음`); break; }
@@ -147,10 +166,12 @@ async function makeOne(a) {
   log.set(a.id, { id: a.id, path: a.path, ok: false, attempts: TRIES, model: a.model, error: String(err?.message).slice(0, 300) });
 }
 
-/** 파생은 원본 뒤에 와야 합니다. manifest 순서가 이미 그렇지만 한 번 더 보장합니다. */
-function order(items) {
-  return [...items.filter((a) => !a.from), ...items.filter((a) => a.from)];
-}
+/** 3단계로 나눕니다: 혼자 서는 것 → 다른 원본을 참조하는 것 → 파생. 뒤가 앞을 기다립니다. */
+const PASS = [
+  (a) => !a.from && !a.refFrom,
+  (a) => !a.from && a.refFrom,
+  (a) => a.from,
+];
 
 async function pool(items, n, fn) {
   const q = [...items];
@@ -167,13 +188,12 @@ async function pool(items, n, fn) {
 }
 
 const picked = ASSETS.filter((a) => (only.length ? only.some((p) => a.id.startsWith(p)) : true));
-const [gen, derived] = [order(picked).filter((a) => !a.from), order(picked).filter((a) => a.from)];
+const passes = PASS.map((f) => picked.filter(f));
 
-line(`대상 ${picked.length}장 (생성 ${gen.length} · 파생 ${derived.length}) · 동시 ${JOBS} · 상한 ${CAP}\n`);
+line(`대상 ${picked.length}장 (${passes.map((p) => p.length).join(' → ')}) · 동시 ${JOBS} · 상한 ${CAP}\n`);
 await mkdir(RAW, { recursive: true });
 
-await pool(gen, JOBS, makeOne);
-await pool(derived, JOBS, makeOne); // 원본이 다 나온 뒤에
+for (const p of passes) await pool(p, JOBS, makeOne);
 
 const prev = await readFile(LOG, 'utf8').then(JSON.parse, () => ({ rows: [], spent: 0 }));
 const rows = [...prev.rows.filter((r) => !log.has(r.id)), ...log.values()];

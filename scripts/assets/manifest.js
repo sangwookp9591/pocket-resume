@@ -49,18 +49,24 @@ const HERO =
   'a young man with short straight black hair, wearing a grey hooded zip-up jacket, ' +
   'dark blue jeans and a small backpack';
 
-/* 캐릭터 3방향. side는 반드시 왼쪽을 봅니다 — 오른쪽은 엔진이 반전합니다(계약 5.B). */
+/* 캐릭터 3방향. side는 반드시 왼쪽을 봅니다 — 오른쪽은 엔진이 반전합니다(계약 5.B).
+
+   up·side는 1차 생성에서 아잉이 정면으로 나왔습니다("back view"만으로는 부족).
+   그래서 "얼굴이 하나도 안 보인다"를 여러 번 다르게 말합니다. */
 const VIEW = {
   down: 'standing and facing the viewer, front view, whole body visible from head to feet',
-  up: 'seen from directly behind, back view, the face is not visible, whole body visible from head to feet',
-  side: 'strict side view profile facing to the left, whole body visible from head to feet',
+  up: 'viewed from directly behind, we see only the back of the head and the back of the body, ' +
+    'the face is completely hidden, no eyes and no face are visible at all, ' +
+    'whole body visible from head to feet',
+  side: 'turned exactly ninety degrees to the left so we see a strict side profile, ' +
+    'only one eye is visible, facing left, whole body visible from head to feet',
 };
 
-const char = (name, dir, who, ref) => ({
+const char = (name, dir, who, ref, refFrom) => ({
   id: `char/${name}-${dir}`,
   path: `public/game/char/${name}-${dir}.webp`,
   w: 32, h: 48, ar: '2:3', model: 'nano_banana_flash',
-  transparent: true, align: 'bottom', ref,
+  transparent: true, align: 'bottom', ref, refFrom,
   subject: `a single full-body character sprite of ${who}, ${VIEW[dir]}`,
 });
 
@@ -81,11 +87,13 @@ const mon = (id, subject) => ({
     'front view facing the viewer, whole body, filling most of the frame',
 });
 
+/* stretch: 타일 발자국의 폭을 채우기 위해 허용하는 가로 확대 상한 (post.py 참고).
+   1.4를 넘기면 건물이 눌린 게 눈에 보입니다 — 그보다 못 채우는 것은 프롬프트로 고칩니다. */
 const obj = (id, tw, th, ar, subject) => ({
   id: `obj/${id}`,
   path: `public/game/obj/${id}.webp`,
   w: tw * 32, h: th * 32, ar, model: 'nano_banana_flash',
-  transparent: true, align: 'bottom',
+  transparent: true, align: 'bottom', stretch: 1.4,
   subject: `${subject}, seen from a slight high angle three-quarter top-down view`,
 });
 
@@ -100,12 +108,17 @@ export const ASSETS = [
   char('hero', 'down', HERO), char('hero', 'up', HERO), char('hero', 'side', HERO),
   walk('hero', 'down'), walk('hero', 'up'), walk('hero', 'side'),
 
+  /* aing-down만 원본 마스코트를 참조합니다. 나머지 아잉은 **aing-down의 원본 PNG**를
+     참조로 씁니다(refFrom) — 마스코트 이미지만 참조하면 방향마다 색·비율이 갈립니다.
+     1차 생성에서 실제로 갈렸습니다: down은 크림색 통통, up은 하늘색, side는 흰색 날씬. */
   char('aing', 'down', AING, REF_AING),
-  char('aing', 'up', AING, REF_AING),
-  char('aing', 'side', AING, REF_AING),
+  char('aing', 'up', `${AING}, exactly the same cat as the reference image`, null, 'char/aing-down'),
+  char('aing', 'side', `${AING}, exactly the same cat as the reference image`, null, 'char/aing-down'),
   walk('aing', 'down'), walk('aing', 'up'), walk('aing', 'side'),
 
-  char('prof', 'down', `${AING}, wearing a white lab coat and round glasses`, REF_AING),
+  char('prof', 'down',
+    `${AING}, the same cat as the reference image but wearing a white lab coat and round glasses`,
+    null, 'char/aing-down'),
   char('npc-senior', 'down',
     'a tired office worker in a white dress shirt with the sleeves rolled up, dark trousers, ' +
     'drooping shoulders and dark circles under the eyes'),
@@ -153,10 +166,15 @@ export const ASSETS = [
     'a modern seaside office building fronted with pale blue reflective glass and a white steel frame, a wide glass entrance'),
   obj('bld-office-3', 4, 3, '4:3',
     'a bright cheerful startup office building with cream walls, a moss green awning, large friendly windows and a potted plant beside the door'),
+  /* 1차 생성에서 폭을 반밖에 못 채웠습니다(타워 49% · 책상 50% · 카페 68%).
+     "wide", "broad", "fills the whole width of the frame"로 비율을 못 박습니다. */
   obj('bld-tower', 5, 4, '5:4',
-    'a tall modern glass skyscraper of about ten floors clad in ice blue reflective glass with a white frame and a wide lobby entrance at the base'),
+    'a broad wide modern glass office tower, much wider than it is tall, a squat five-floor block ' +
+    'clad in ice blue reflective glass with a white frame and a wide lobby entrance across the base, ' +
+    'the building fills the entire width of the frame from left edge to right edge'),
   obj('bld-cafe', 3, 2, '3:2',
-    'a small cosy cafe building with a bright red roof, cream walls, a striped awning and one large front window'),
+    'a wide low cosy cafe building with a bright red roof, cream walls, a long striped awning ' +
+    'and two large front windows, the building fills the entire width of the frame'),
   obj('bld-gym', 4, 3, '4:3',
     'a sturdy stone gymnasium building with two thick stone pillars flanking a large double door and a grey slate roof'),
   obj('tree', 2, 2, '1:1',
@@ -178,7 +196,8 @@ export const ASSETS = [
   obj('mailbox', 1, 1, '1:1',
     'a small mailbox with an ice blue rounded body on a short wooden post'),
   obj('desk', 2, 1, '16:9',
-    'a wooden computer desk with a flat monitor, a keyboard and a small desk lamp on top'),
+    'a long wide wooden computer desk, twice as wide as it is deep, with a flat monitor, ' +
+    'a keyboard and a small desk lamp on top, the desk fills the entire width of the frame'),
   obj('shelf', 1, 2, '9:16',
     'a tall narrow wooden bookshelf with three shelves filled with colourful books'),
   obj('campfire', 1, 1, '1:1',
@@ -189,12 +208,19 @@ export const ASSETS = [
     'a wide grassy meadow clearing seen at ground level, tall grass in the foreground, distant trees and rolling green hills under a clear morning sky, empty scene with no characters'),
   bg('battle-2', 512, 192, '21:9', 'nano_banana_flash',
     'the wide interior of a dim office at night, rows of desks with glowing monitors, ceiling lights, empty scene with no characters'),
+  /* 1차 생성에서 선체에 배 이름("SEA DRAGON")이 찍혔습니다. 공통 STYLE의 no text로는
+     부족해서 글자가 붙기 쉬운 자리를 직접 지목합니다. */
   bg('battle-3', 512, 192, '21:9', 'nano_banana_flash',
-    'a wide harbour quay by the sea, wooden docks, a moored fishing boat, stacked crates and a lighthouse in the distance, empty scene with no characters'),
+    'a wide harbour quay by the sea, wooden docks, a moored fishing boat with a completely blank ' +
+    'unpainted hull, stacked crates and a lighthouse in the distance, empty scene with no characters, ' +
+    'nothing is written on the boat, no name on the hull, no signs, no labels on the crates'),
   bg('battle-4', 512, 192, '21:9', 'nano_banana_flash',
     'a wide night sky over a quiet dark hill, scattered stars and a thin crescent moon, deep indigo gradient, empty scene with no characters'),
+  /* 헬리패드에 'H'가 찍혔습니다 — 글자입니다. 원 표시만 남깁니다. */
   bg('battle-5', 512, 192, '21:9', 'nano_banana_flash',
-    'the wide rooftop of a tall glass tower at dusk, a helipad circle, safety railings and a city skyline far below, empty scene with no characters'),
+    'the wide rooftop of a tall glass tower at dusk, a plain empty painted circle on the deck, ' +
+    'safety railings and a city skyline far below, empty scene with no characters, ' +
+    'the circle is completely blank with no letter inside it, no markings, no signage'),
 
   bg('title', 512, 352, '3:2', 'gpt_image_2',
     `a wide title screen illustration: the back view of ${HERO} standing on a grassy hilltop at dawn beside ${AING}, ` +
