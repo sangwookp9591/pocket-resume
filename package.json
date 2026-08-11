@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "node --test test/"
+    "check": "node --test \"test/**/*.test.js\""
   },
   "dependencies": {
     "next": "16.3.0",

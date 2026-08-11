@@ -10,7 +10,10 @@
      { give: 'spring' }                 도감 등록
      { badge: 'confidence' }            배지 획득
      { battle: {...} }                  배틀 진입
-     { set: 'flag' } / { unless: 'f' }  플래그
+     { set: 'flag' }                    플래그 세우기
+     { unless: 'f', t: '...' }          f가 없으면 이 말을 하고 나머지를 버림
+     { require: 'a b c' }               셋 다 없으면 조용히 나머지를 버림
+     { block: true }                    이동을 막음
      { warp: { to, x, y } }             맵 이동
      { scene: 'hall' }                  씬 전환
      { fx: 'shake'|'flash'|'fade' }     연출
@@ -149,7 +152,7 @@ export const SCRIPTS = {
   ],
 
   'office.leave': [
-    { unless: 'has.springboot has.jpa has.react', t: '' },
+    { require: 'has.springboot has.jpa has.react' },
     { fx: 'fade' },
     { t: '세 가지를 혼자 붙여 봤다. 누가 시켜서가 아니었다.' },
     { face: 'proud', who: '아잉', t: '{name}, 이거 봐. 시킨 건 하나였는데 넷이 됐어.' },
@@ -173,7 +176,7 @@ export const SCRIPTS = {
   ],
 
   'harbor.ace': [
-    { unless: 'has.reactnative has.aws', t: '' },
+    { require: 'has.reactnative has.aws' },
     { who: '실력자', t: '왔구나. 뭐 좀 배웠어?' },
     { face: 'proud', who: '아잉', t: 'React Native랑 AWS를 잡았어!' },
     { who: '실력자', t: '좋네. 그럼 한 판 할까.' },
@@ -251,7 +254,7 @@ export const SCRIPTS = {
   ],
 
   'share.lead': [
-    { unless: 'has.insight', t: '' },
+    { require: 'has.insight' },
     { who: '팀 리드', t: '재밌죠, 저 친구들.' },
     { who: '팀 리드', t: '저는 저 습관 하나가 시니어랑 주니어를 가른다고 봐요. 연차 말고.' },
     { t: `${J.share.lesson}` },
@@ -356,9 +359,8 @@ export const SCRIPTS = {
 
   'tower.lead': [
     {
-      unless:
+      require:
         'has.nextjs has.vanilla has.playwright has.fsd has.rbac has.archunit has.opensearch has.resilience has.outbox',
-      t: '',
     },
     { who: '팀원', t: '세 구역 다 도셨네요.' },
     { who: '팀원', t: '근데 신기한 게, 이거 다 따로 배운 게 아니잖아요.' },
