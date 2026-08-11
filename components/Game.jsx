@@ -45,7 +45,7 @@ export default function Game() {
   const setState = useCallback((s) => { stateRef.current = s; forceUI(); }, []);
 
   /* ── 스크립트 실행 ─────────────────────────────────────────── */
-  const pump = useCallback((r) => {
+  const pump = useCallback((r) => {  // eslint-disable-line react-hooks/exhaustive-deps
     let s = r.next();
     // 화면이 필요 없는 것은 여기서 소화합니다.
     while (s.kind === 'banner' || s.kind === 'fx' || s.kind === 'wait' || s.kind === 'warp') {
@@ -59,7 +59,7 @@ export default function Game() {
       persist();
       return;
     }
-    if (s.kind === 'battle') { setBattle(s.battle); setStep(null); return; }
+    if (s.kind === 'battle') { enterBattle(s.battle); setStep(null); return; }
     if (s.kind === 'scene') { runnerRef.current = null; setStep(null); setScene(s.scene); return; }
     setStep(s);
   }, []);
@@ -87,11 +87,28 @@ export default function Game() {
     if (enter) runScript(enter.script);
   }, [getState, setState, runScript]);
 
+  /* 포켓몬의 그 소용돌이. 화면이 감기는 동안 월드는 계속 돌고, 다 감기면 배틀이 뜹니다.
+     prefers-reduced-motion이면 즉시 전환합니다 — 회전하는 화면을 못 보는 사람이 있습니다. */
+  const enterBattle = useCallback((spec) => {
+    const reduce = typeof window !== 'undefined'
+      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { setBattle(spec); return; }
+    const t0 = performance.now();
+    const DUR = 620;
+    const tick = () => {
+      const p = Math.min(1, (performance.now() - t0) / DUR);
+      wipeRef.current = p;
+      if (p < 1) requestAnimationFrame(tick);
+      else { setBattle(spec); wipeRef.current = 0; }
+    };
+    requestAnimationFrame(tick);
+  }, []);
+
   const handleWorldEvent = useCallback((e) => {
     if (!e) return;
     if (e.kind === 'warp') return doWarp(e.warp);
     if (e.kind === 'encounter') {
-      return setBattle({
+      return enterBattle({
         mon: e.mon,
         level: encounterLevel(getState()),
         bg: bgFor(worldRef.current?.map.id),
@@ -103,7 +120,7 @@ export default function Game() {
       if (e.event?.once) setState({ ...getState(), flags: [...getState().flags, `ev.${e.script}`] });
       runScript(e.script);
     }
-  }, [doWarp, getState, setState, runScript]);
+  }, [doWarp, getState, setState, runScript, enterBattle]);
 
   /* ── 부팅: 렌더러 + 에셋 + 루프 ─────────────────────────────── */
   useEffect(() => {
@@ -145,6 +162,7 @@ export default function Game() {
           const view = w.view();
           const t = tintFor(view.map.time);
           r.setTint(t.rgba, t.strength);
+          r.setWipe(wipeRef.current > 0 ? 'spiral' : 'none', wipeRef.current);
           drawWorld(r, view, camera(view, VIEW_W, VIEW_H), { timeMs: performance.now() });
         },
       });
@@ -169,6 +187,7 @@ export default function Game() {
   // 루프 안에서 최신 값을 보려면 ref가 필요합니다 — 클로저가 첫 렌더에 묶입니다.
   const battleRef = useRef(null);
   const overlayRef = useRef(null);
+  const wipeRef = useRef(0); // 0..1. 렌더 콜백이 매 프레임 읽습니다
   useEffect(() => { battleRef.current = battle; }, [battle]);
   useEffect(() => { overlayRef.current = overlay; }, [overlay]);
 
@@ -302,7 +321,7 @@ export default function Game() {
   function handleStep(s) {
     if (!s) return;
     if (s.kind === 'done') { runnerRef.current = null; setStep(null); persist(); return; }
-    if (s.kind === 'battle') { setBattle(s.battle); return; }
+    if (s.kind === 'battle') { enterBattle(s.battle); return; }
     if (s.kind === 'scene') { runnerRef.current = null; setScene(s.scene); return; }
     if (s.kind === 'banner') { setBanner(s.text); return; }
     if (s.kind === 'warp') { doWarp(s.warp); return advance(); }
