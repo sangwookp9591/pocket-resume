@@ -295,15 +295,6 @@
       "fill": 1
     },
     {
-      "id": "bg/title",
-      "path": "public/game/bg/title.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "gpt_image_2",
-      "bytes": 26942,
-      "fill": 1
-    },
-    {
       "id": "char/hero-down-2",
       "path": "public/game/char/hero-down-2.webp",
       "ok": true,
@@ -580,6 +571,14 @@
       "model": "derive",
       "bytes": 2432,
       "fill": 0.696
+    },
+    {
+      "id": "bg/title",
+      "path": "public/game/bg/title.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     }
   ]
 }
