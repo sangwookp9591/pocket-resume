@@ -8,7 +8,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16.3%20App%20Router-000000?logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![WebGPU](https://img.shields.io/badge/WebGPU-WGSL%20·%20드로우콜%201회-7C9EE8)
-![Tests](https://img.shields.io/badge/테스트-148개-7FA65C)
+![Tests](https://img.shields.io/badge/테스트-156개-7FA65C)
 ![Deps](https://img.shields.io/badge/런타임%20의존성-3개-blue)
 
 </div>
@@ -90,14 +90,14 @@ ShedLock · 멱등 권위 · consume/cancel 역연산 · usage 파티셔닝
 | 깊이 | 규칙 하나. **아래에 있는 것이 위를 가린다** (`depth = 발끝 y`). 나무 뒤로 걸어 들어가면 가려집니다 |
 | 풀숲 흔들림 | 정점 셰이더가 윗변만 좌우로 밉니다. 캐릭터 위에 한 번 더 그려 허리까지 잠기게 |
 | 시간대 | 6종 tint 프리셋. 새벽 → 아침 → 한낮 → 오후 → 해질녘 → 밤 |
-| 배틀 전환 | 소용돌이 와이프. 풀스크린 후처리 |
+| 배틀 전환 | 소용돌이 와이프. 화면이 감기는 동안 월드는 계속 돕니다 |
 | 지면 타일 | **코드가 그립니다.** 59종(오토타일 엣지 16종 × 3쌍 포함), 시드 PRNG로 결정적 |
 
 지면을 AI로 만들지 않은 이유는 하나입니다 — **AI로 seamless 타일을 만들면 이음매가 반드시 보입니다.**
 
 ```bash
 npm run dev      # 개발 서버
-npm run check    # node --test, 148개
+npm run check    # node --test, 156개
 npm run build
 ```
 
@@ -121,7 +121,7 @@ lib/engine/   렌더러·타일 생성·맵 파서·입력·루프  (React를 �
 lib/game/     배틀·세이브·스크립트 러너·월드      (캔버스를 모릅니다)
 components/   씬 관리자·배틀 UI·도감              (규칙을 모릅니다)
 docs/         설계 계약 · 크레딧 · 에셋 리포트
-test/         148개. 맵 33 · 콘텐츠 12 · 배틀 16 · 러너 16 · 월드 19 · 엔진 51
+test/         156개. 맵 33 · 콘텐츠 12 · 배틀 16 · 러너 16 · 월드 19 · 플레이스루 8 · 엔진 51
 ```
 
 계층마다 모르는 것이 있는 것이 설계입니다. `docs/GAME-CONTRACT.md`가 그 경계를 적어 둔 계약이고,
