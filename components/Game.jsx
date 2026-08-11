@@ -119,7 +119,9 @@ export default function Game() {
         update: (dt) => {
           const w = worldRef.current;
           if (!w) return;
-          w.update(dt);
+          // loop.js는 초 단위로 줍니다(STEP_MS/1000). world는 ms로 셉니다 —
+          // 여기서 안 맞추면 160ms 이동이 160초가 됩니다.
+          w.update(dt * 1000);
           // UI가 떠 있으면 걷지 않습니다. 대화 중에 뒤에서 움직이면 안 됩니다.
           if (runnerRef.current || battleRef.current || overlayRef.current) { input.consume(); return; }
           const d = input.dirHeld;
@@ -134,11 +136,23 @@ export default function Game() {
           const w = worldRef.current;
           if (!w) return;
           const view = w.view();
-          r.setTint(...tintFor(view.map.time));
+          const t = tintFor(view.map.time);
+          r.setTint(t.rgba, t.strength);
           drawWorld(r, view, camera(view, VIEW_W, VIEW_H), { timeMs: performance.now() });
         },
       });
       loop.start();
+      // 개발용 손잡이. 브라우저 콘솔에서 상태를 들여다보려면 이게 있어야 합니다.
+      if (process.env.NODE_ENV !== 'production') {
+        window.__game = {
+          get pos() { return worldRef.current?.pos; },
+          get map() { return worldRef.current?.map.id; },
+          get state() { return stateRef.current; },
+          get running() { return loop.running; },
+          get busy() { return { runner: !!runnerRef.current, battle: !!battleRef.current, overlay: overlayRef.current }; },
+          input, renderer: r, world: () => worldRef.current,
+        };
+      }
       stop = () => { loop.stop(); input.destroy(); r.destroy(); };
     })();
 
