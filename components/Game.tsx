@@ -19,33 +19,36 @@ import { createState, load, save, clearSave, addMon, moveTo } from '../lib/game/
 import { SCRIPTS, WILD_LINES } from '../content/script.ts';
 import { MAPS } from '../content/maps.ts';
 import { byId } from '../content/mons.ts';
+import type { BattleSpec, Dir, GameState, MapId, MonId, PartyUnit, Warp, WarpTarget } from '../content/types.ts';
+import type { Runner, Step } from '../lib/game/runner.ts';
+import type { WorldEvent } from '../lib/game/world.ts';
 import Battle from './Battle.jsx';
 import { DialogueBox, Choices, NameInput, Banner, Dex, Menu, TitleScreen, HallOfFame, TouchPad } from './ui.jsx';
 
 export default function Game() {
-  const canvasRef = useRef(null);
-  const rendererRef = useRef(null);
-  const worldRef = useRef(null);
-  const inputRef = useRef(null);
-  const runnerRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rendererRef = useRef<Awaited<ReturnType<typeof createRenderer>> | null>(null);
+  const worldRef = useRef<ReturnType<typeof createWorld> | null>(null);
+  const inputRef = useRef<ReturnType<typeof createInput> | null>(null);
+  const runnerRef = useRef<Runner | null>(null);
   const stateRef = useRef(createState());
   const [, forceUI] = useReducer((n) => n + 1, 0);
 
-  const [scene, setScene] = useState('title'); // title | loading | world | hall | credits
-  const [step, setStep] = useState(null); // 러너가 낸 현재 화면
-  const [battle, setBattle] = useState(null);
-  const [overlay, setOverlay] = useState(null); // dex | menu
-  const [banner, setBanner] = useState(null);
+  const [scene, setScene] = useState<'title' | 'world' | 'hall' | 'credits'>('title');
+  const [step, setStep] = useState<Step | null>(null); // 러너가 낸 현재 화면
+  const [battle, setBattle] = useState<BattleSpec | null>(null);
+  const [overlay, setOverlay] = useState<'dex' | 'menu' | null>(null);
+  const [banner, setBanner] = useState<string | null>(null);
   const [boot, setBoot] = useState({ done: false, pct: 0, backend: '', missing: 0 });
   const [hasSave, setHasSave] = useState(false);
 
   useEffect(() => setHasSave(!!load()), []);
 
   const getState = useCallback(() => stateRef.current, []);
-  const setState = useCallback((s) => { stateRef.current = s; forceUI(); }, []);
+  const setState = useCallback((s: GameState) => { stateRef.current = s; forceUI(); }, []);
 
   /* ── 스크립트 실행 ─────────────────────────────────────────── */
-  const pump = useCallback((r) => {  // eslint-disable-line react-hooks/exhaustive-deps
+  const pump = useCallback((r: Runner) => {  // eslint-disable-line react-hooks/exhaustive-deps
     let s = r.next();
     // 화면이 필요 없는 것은 여기서 소화합니다.
     while (s.kind === 'banner' || s.kind === 'fx' || s.kind === 'wait' || s.kind === 'warp') {
@@ -64,7 +67,7 @@ export default function Game() {
     setStep(s);
   }, []);
 
-  const runScript = useCallback((name) => {
+  const runScript = useCallback((name: string) => {
     const cmds = SCRIPTS[name];
     if (!cmds) { console.warn(`[game] 없는 스크립트: ${name}`); return; }
     const r = createRunner(cmds, { getState, setState });
@@ -79,17 +82,17 @@ export default function Game() {
   }, [pump]);
 
   /* ── 월드 이벤트 ───────────────────────────────────────────── */
-  const doWarp = useCallback((w) => {
+  const doWarp = useCallback((w: Warp | WarpTarget) => {
     const world = worldRef.current;
     if (!world) return;
     const enter = world.goto(w.to, w.tx, w.ty, w.dir);
     setState(moveTo(getState(), w.to, w.tx, w.ty, w.dir ?? getState().dir));
-    if (enter) runScript(enter.script);
+    if (enter?.kind === 'script') runScript(enter.script);
   }, [getState, setState, runScript]);
 
   /* 포켓몬의 그 소용돌이. 화면이 감기는 동안 월드는 계속 돌고, 다 감기면 배틀이 뜹니다.
      prefers-reduced-motion이면 즉시 전환합니다 — 회전하는 화면을 못 보는 사람이 있습니다. */
-  const enterBattle = useCallback((spec) => {
+  const enterBattle = useCallback((spec: BattleSpec) => {
     const reduce = typeof window !== 'undefined'
       && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduce) { setBattle(spec); return; }
@@ -104,7 +107,7 @@ export default function Game() {
     requestAnimationFrame(tick);
   }, []);
 
-  const handleWorldEvent = useCallback((e) => {
+  const handleWorldEvent = useCallback((e: WorldEvent | null | undefined) => {
     if (!e) return;
     if (e.kind === 'warp') return doWarp(e.warp);
     if (e.kind === 'encounter') {
@@ -132,7 +135,7 @@ export default function Game() {
       const r = await createRenderer(canvasRef.current, { width: WIDTH, height: HEIGHT });
       if (dead) return r.destroy();
       rendererRef.current = r;
-      const res = await loadAssets(r, { onProgress: (n, t) => setBoot((b) => ({ ...b, pct: n / t })) });
+      const res = await loadAssets(r, { onProgress: (n: number, t: number) => setBoot((b) => ({ ...b, pct: n / t })) });
       if (dead) return r.destroy();
       setBoot({ done: true, pct: 1, backend: r.backend, missing: res.placeholder.length });
 
@@ -140,7 +143,7 @@ export default function Game() {
       inputRef.current = input;
 
       const loop = createLoop({
-        update: (dt) => {
+        update: (dt: number) => {
           const w = worldRef.current;
           if (!w) return;
           // loop.js는 초 단위로 줍니다(STEP_MS/1000). world는 ms로 셉니다 —
@@ -169,7 +172,7 @@ export default function Game() {
       loop.start();
       // 개발용 손잡이. 브라우저 콘솔에서 상태를 들여다보려면 이게 있어야 합니다.
       if (process.env.NODE_ENV !== 'production') {
-        window.__game = {
+        (window as unknown as { __game: unknown }).__game = {
           get pos() { return worldRef.current?.pos; },
           get map() { return worldRef.current?.map.id; },
           get state() { return stateRef.current; },
@@ -185,8 +188,8 @@ export default function Game() {
   }, [scene, handleWorldEvent]);
 
   // 루프 안에서 최신 값을 보려면 ref가 필요합니다 — 클로저가 첫 렌더에 묶입니다.
-  const battleRef = useRef(null);
-  const overlayRef = useRef(null);
+  const battleRef = useRef<BattleSpec | null>(null);
+  const overlayRef = useRef<'dex' | 'menu' | null>(null);
   const wipeRef = useRef(0); // 0..1. 렌더 콜백이 매 프레임 읽습니다
   useEffect(() => { battleRef.current = battle; }, [battle]);
   useEffect(() => { overlayRef.current = overlay; }, [overlay]);
@@ -223,12 +226,12 @@ export default function Game() {
   }, []);
 
   /* ── 시작 ─────────────────────────────────────────────────── */
-  const start = useCallback((fresh) => {
+  const start = useCallback((fresh: boolean) => {
     const s = fresh ? createState() : (load() ?? createState());
     if (fresh) clearSave();
     stateRef.current = s;
-    const spawn = MAPS[s.map]?.spawn ?? { x: 0, y: 0, dir: 'down' };
-    const at = fresh ? spawn : { x: s.x, y: s.y, dir: s.dir };
+    const spawn: { x: number; y: number; dir: Dir } = MAPS[s.map]?.spawn ?? { x: 0, y: 0, dir: 'down' };
+    const at: { x: number; y: number; dir: Dir } = fresh ? spawn : { x: s.x, y: s.y, dir: s.dir };
     worldRef.current = createWorld(s.map, { ...s, ...at }, { onEvent: handleWorldEvent });
     setScene('world');
     if (fresh) setTimeout(() => runScript('lab.open'), 60);
@@ -236,9 +239,9 @@ export default function Game() {
   }, [handleWorldEvent, runScript]);
 
   /* ── 배틀 종료 ─────────────────────────────────────────────── */
-  const endBattle = useCallback(({ result, party, caught }) => {
+  const endBattle = useCallback(({ party, caught }: { result: unknown; party: PartyUnit[]; caught: string | null }) => {
     let s = { ...stateRef.current, party };
-    if (caught) s = addMon(s, caught, 5);
+    if (caught) s = addMon(s, caught as MonId, 5);
     stateRef.current = s;
     setBattle(null);
     persist();
@@ -307,7 +310,7 @@ export default function Game() {
       )}
 
       <TouchPad
-        onDir={(d, down) => { if (down) worldRef.current?.press(d); }}
+        onDir={(d: Dir, down: boolean) => { if (down) worldRef.current?.press(d); }}
         onA={() => (step ? advance() : handleWorldEvent(worldRef.current?.interact()))}
         onB={() => setOverlay(null)}
         onMenu={() => setOverlay((v) => (v ? null : 'menu'))}
@@ -318,7 +321,7 @@ export default function Game() {
   );
 
   /* 선택지·이름 입력 뒤에는 러너가 이미 한 걸음 나아가 있어, pump 대신 그 결과를 직접 씁니다. */
-  function handleStep(s) {
+  function handleStep(s: Step | null) {
     if (!s) return;
     if (s.kind === 'done') { runnerRef.current = null; setStep(null); persist(); return; }
     if (s.kind === 'battle') { enterBattle(s.battle); return; }
@@ -331,14 +334,16 @@ export default function Game() {
 }
 
 /** 인카운터 레벨은 지금까지 잡은 수에 맞춥니다 — 뒤 맵에서 5레벨이 나오면 맥이 빠집니다. */
-function encounterLevel(s) {
+function encounterLevel(s: GameState): number {
   return Math.min(48, 5 + s.dex.length * 2 + s.badges.length * 4);
 }
 
-const BG_BY_MAP = { 'night-office': 2, 'wave-harbor': 3, 'share-village': 4, 'zivo-tower': 5, 'zivo-city': 5 };
-const bgFor = (id) => BG_BY_MAP[id] ?? 1;
+const BG_BY_MAP: Partial<Record<MapId, 1 | 2 | 3 | 4 | 5>> = {
+  'night-office': 2, 'wave-harbor': 3, 'share-village': 4, 'zivo-tower': 5, 'zivo-city': 5,
+};
+const bgFor = (id: MapId | undefined): 1 | 2 | 3 | 4 | 5 => (id && BG_BY_MAP[id]) || 1;
 
-function Credits({ state, onTitle }) {
+function Credits({ state, onTitle }: { state: GameState; onTitle: () => void }) {
   return (
     <div className="credits">
       <div className="roll">

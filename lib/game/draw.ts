@@ -8,14 +8,26 @@ import { TILE, VIEW_W, VIEW_H } from '../engine/config.ts';
 import { GROUND_TILE, OVER_OBJ } from '../engine/map.ts';
 import { EDGE_PAIRS, edgeKey, WATER_FRAMES } from '../engine/tilegen.ts';
 import { charKey, objKey } from './assets.ts';
+import type { ParsedMap } from '../engine/map.ts';
+import type { Actor, WorldView } from './world.ts';
+import type { Dir } from '../../content/types.ts';
+
+/** drawWorld가 쓰는 렌더러의 최소 면. 전체 인터페이스를 요구하지 않습니다. */
+export interface DrawTarget {
+  begin: (camX: number, camY: number) => void;
+  draw: (key: string, sx: number, sy: number, sw: number, sh: number,
+         dx: number, dy: number, dw: number, dh: number,
+         opts?: { flipX?: boolean; depth?: number; sway?: number; alpha?: number }) => void;
+  present: () => void;
+}
 
 const GROUND_DEPTH = -1e6;
 /** 위로 넘치는 오브젝트의 실제 높이(타일). assets.js의 OBJECTS와 같은 값이어야 합니다. */
-const OBJ_H = {
+const OBJ_H: Record<string, number> = {
   'bld-lab': 3, 'bld-house': 2, 'bld-office-1': 3, 'bld-office-2': 3, 'bld-office-3': 3,
   'bld-tower': 4, 'bld-cafe': 2, 'bld-gym': 3, tree: 2, lamp: 2, shelf: 2,
 };
-const OBJ_W = {
+const OBJ_W: Record<string, number> = {
   'bld-lab': 4, 'bld-house': 3, 'bld-office-1': 4, 'bld-office-2': 4, 'bld-office-3': 4,
   'bld-tower': 5, 'bld-cafe': 3, 'bld-gym': 4, tree: 2, desk: 2,
 };
@@ -24,15 +36,15 @@ const SWAYS = new Set(['bush', 'flower', 'tree', 'tree-small', 'campfire']);
 /** 지면에 눕는 것 — 깊이 정렬에서 빠져 항상 바닥에 깔립니다. */
 const FLAT = new Set(['door', 'stairs']);
 
-const ch = (arr, w, x, y) => String.fromCharCode(arr[y * w + x]);
+const ch = (arr: Uint8Array, w: number, x: number, y: number) => String.fromCharCode(arr[y * w + x]!);
 
 /** 물은 3프레임. 맵 전체가 같은 위상으로 흘러야 이음매가 안 보입니다. */
-function waterFrame(timeMs) {
-  return WATER_FRAMES[Math.floor(timeMs / 420) % WATER_FRAMES.length];
+function waterFrame(timeMs: number): string {
+  return WATER_FRAMES[Math.floor(timeMs / 420) % WATER_FRAMES.length]!;
 }
 
 /** 오토타일. base 타일의 이웃에 other가 있으면 스며드는 변형을 씁니다. */
-function groundTileName(map, x, y, timeMs) {
+function groundTileName(map: ParsedMap, x: number, y: number, timeMs: number): string | null {
   const g = ch(map.ground, map.w, x, y);
   const base = GROUND_TILE[g];
   if (!base) return null;
@@ -58,7 +70,7 @@ function groundTileName(map, x, y, timeMs) {
  * @param cam      {x,y} 타일 단위 카메라
  * @param opts     { timeMs, dexHas(id) }
  */
-export function drawWorld(r, view, cam, { timeMs = 0 } = {}) {
+export function drawWorld(r: DrawTarget, view: WorldView, cam: { x: number; y: number }, { timeMs = 0 }: { timeMs?: number } = {}): void {
   const { map, player, follower } = view;
   const cx = cam.x * TILE;
   const cy = cam.y * TILE;
@@ -120,7 +132,7 @@ export function drawWorld(r, view, cam, { timeMs = 0 } = {}) {
   drawActor(r, 'hero', player.x, player.y, player.dir, player.frame, 0.75);
 
   // 6) 풀숲은 캐릭터 위에도 한 번 더 — 허리까지 잠겨 보이게. HGSS의 그 느낌입니다.
-  for (const a of [follower, player]) {
+  for (const a of [follower, player] as Actor[]) {
     const tx = Math.round(a.x);
     const ty = Math.round(a.y);
     if (objAt(map, tx, ty) === 'bush') {
@@ -132,14 +144,14 @@ export function drawWorld(r, view, cam, { timeMs = 0 } = {}) {
   r.present();
 }
 
-function objAt(map, x, y) {
+function objAt(map: ParsedMap, x: number, y: number): string | null {
   if (x < 0 || y < 0 || x >= map.w || y >= map.h) return null;
   const c = ch(map.over, map.w, x, y);
   return OVER_OBJ[c] ?? map.legend?.[c]?.obj ?? null;
 }
 
 /** 캐릭터 한 명. side 스프라이트는 오른쪽을 볼 때 좌우 반전합니다. */
-function drawActor(r, sprite, x, y, dir, frame, bias = 0.5) {
+function drawActor(r: DrawTarget, sprite: string, x: number, y: number, dir: Dir | string, frame: number, bias = 0.5): void {
   const key = charKey(sprite, dir, frame);
   const w = TILE;
   const h = 48;

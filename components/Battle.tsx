@@ -6,16 +6,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { initBattle, makeUnit, step, grantExp } from '../lib/game/battle.ts';
 import { byId } from '../content/mons.ts';
+import type { BattleSpec, PartyUnit } from '../content/types.ts';
+import type { BattleState } from '../lib/game/battle.ts';
 import { DialogueBox, TypeChip, PixelImg } from './ui.jsx';
 
-const MENU = [
+const MENU: Array<[string, string]> = [
   ['move', '기술'],
   ['ball', '기술볼'],
   ['switch', '교체'],
   ['run', '도망'],
 ];
 
-export default function Battle({ spec, party, onEnd }) {
+export default function Battle({ spec, party, onEnd }: {
+  spec: BattleSpec;
+  party: PartyUnit[];
+  onEnd: (r: { result: BattleState['over']; party: PartyUnit[]; caught: string | null }) => void;
+}) {
   const [st, setSt] = useState(() =>
     initBattle({
       playerParty: party.length ? party : [makeUnit('spring', 5)],
@@ -30,13 +36,13 @@ export default function Battle({ spec, party, onEnd }) {
   const [cur, setCur] = useState(0);
   const endedRef = useRef(false);
 
-  const me = st.party[st.active];
+  const me = st.party[st.active]!;
   const log = st.log;
   const reading = shown < log.length;
 
-  const act = useCallback((kind, idx) => {
+  const act = useCallback((kind: 'move' | 'ball' | 'run' | 'switch', idx?: number) => {
     setSt((s) => {
-      const n = step(s, { kind, idx });
+      const n = step(s, { kind, idx } as Parameters<typeof step>[1]);
       return n;
     });
     setMode('log');
@@ -61,8 +67,8 @@ export default function Battle({ spec, party, onEnd }) {
   }, [mode, reading, st.over]);
 
   const options = useMemo(() => {
-    if (mode === 'menu') return MENU.map(([k, label]) => ({ k, label }));
-    if (mode === 'moves') return me.mon.moves.map((m, i) => ({ k: String(i), label: m }));
+    if (mode === 'menu') return MENU.map(([k, label]) => ({ k, label, dim: false }));
+    if (mode === 'moves') return me.mon.moves.map((m, i) => ({ k: String(i), label: m, dim: false }));
     if (mode === 'switch') {
       return st.party.map((u, i) => ({
         k: String(i), label: `${u.mon.name} Lv.${u.level} (${u.hp}/${u.maxHp})`, dim: u.hp <= 0 || i === st.active,
@@ -74,7 +80,7 @@ export default function Battle({ spec, party, onEnd }) {
   useEffect(() => setCur(0), [mode]);
 
   useEffect(() => {
-    const h = (e) => {
+    const h = (e: KeyboardEvent) => {
       if (reading || st.over) {
         if (e.key === 'Enter' || e.key === ' ' || e.key === 'z') { e.preventDefault(); setShown((v) => Math.min(log.length, v + 1)); }
         return;
@@ -89,13 +95,13 @@ export default function Battle({ spec, party, onEnd }) {
     return () => window.removeEventListener('keydown', h);
   });
 
-  function choose(i) {
+  function choose(i: number) {
     const o = options[i];
     if (!o || o.dim) return;
     if (mode === 'menu') {
       if (o.k === 'move') setMode('moves');
       else if (o.k === 'switch') setMode('switch');
-      else act(o.k);
+      else act(o.k as 'ball' | 'run');
       return;
     }
     if (mode === 'moves') act('move', Number(o.k));
@@ -137,7 +143,7 @@ export default function Battle({ spec, party, onEnd }) {
   );
 }
 
-function Slot({ unit, foe }) {
+function Slot({ unit, foe }: { unit: PartyUnit; foe?: boolean }) {
   const pct = Math.max(0, Math.round((unit.hp / unit.maxHp) * 100));
   const hue = pct > 50 ? '#7FA65C' : pct > 20 ? '#F2C94C' : '#F2814F';
   return (

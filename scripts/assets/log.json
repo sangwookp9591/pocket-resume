@@ -10,80 +10,104 @@
       "note": "skip(이미 있음)"
     },
     {
+      "id": "char/aing-down",
+      "path": "public/game/char/aing-down.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
       "id": "char/hero-side",
       "path": "public/game/char/hero-side.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1122,
-      "fill": 0.2578
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "char/hero-up",
       "path": "public/game/char/hero-up.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1180,
-      "fill": 0.3021
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
-      "id": "char/aing-down",
-      "path": "public/game/char/aing-down.webp",
+      "id": "char/npc-senior-down",
+      "path": "public/game/char/npc-senior-down.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 2082,
-      "fill": 0.6204
-    },
-    {
-      "id": "char/npc-ace-down",
-      "path": "public/game/char/npc-ace-down.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1088,
-      "fill": 0.2682
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "char/npc-junior-down",
       "path": "public/game/char/npc-junior-down.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1758,
-      "fill": 0.3926
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
-      "id": "char/npc-nurse-down",
-      "path": "public/game/char/npc-nurse-down.webp",
+      "id": "char/npc-ace-down",
+      "path": "public/game/char/npc-ace-down.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1628,
-      "fill": 0.3861
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "char/npc-lead-down",
       "path": "public/game/char/npc-lead-down.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1758,
-      "fill": 0.4811
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "char/npc-nurse-down",
+      "path": "public/game/char/npc-nurse-down.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "mon/springboot",
+      "path": "public/game/mon/springboot.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "mon/jpa",
+      "path": "public/game/mon/jpa.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/spring",
       "path": "public/game/mon/spring.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 6854,
-      "fill": 0.4702
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/react",
       "path": "public/game/mon/react.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "mon/aws",
+      "path": "public/game/mon/aws.webp",
       "ok": true,
       "attempts": 0,
       "model": "—",
@@ -98,175 +122,284 @@
       "note": "skip(이미 있음)"
     },
     {
-      "id": "char/npc-senior-down",
-      "path": "public/game/char/npc-senior-down.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1562,
-      "fill": 0.3984
-    },
-    {
-      "id": "mon/springboot",
-      "path": "public/game/mon/springboot.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 6782,
-      "fill": 0.4097
-    },
-    {
-      "id": "mon/jpa",
-      "path": "public/game/mon/jpa.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 8208,
-      "fill": 0.5471
-    },
-    {
       "id": "mon/insight",
       "path": "public/game/mon/insight.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 8030,
-      "fill": 0.4893
-    },
-    {
-      "id": "mon/ainews",
-      "path": "public/game/mon/ainews.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 9596,
-      "fill": 0.5399
-    },
-    {
-      "id": "mon/aws",
-      "path": "public/game/mon/aws.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 6858,
-      "fill": 0.6332
-    },
-    {
-      "id": "mon/nextjs",
-      "path": "public/game/mon/nextjs.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 8064,
-      "fill": 0.6621
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/fsd",
       "path": "public/game/mon/fsd.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 10354,
-      "fill": 0.6974
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "mon/ainews",
+      "path": "public/game/mon/ainews.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "mon/nextjs",
+      "path": "public/game/mon/nextjs.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/playwright",
       "path": "public/game/mon/playwright.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 8472,
-      "fill": 0.5636
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/rbac",
       "path": "public/game/mon/rbac.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 9778,
-      "fill": 0.5714
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/opensearch",
       "path": "public/game/mon/opensearch.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 8204,
-      "fill": 0.5475
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/resilience",
       "path": "public/game/mon/resilience.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 10256,
-      "fill": 0.5573
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/outbox",
       "path": "public/game/mon/outbox.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 5504,
-      "fill": 0.3597
-    },
-    {
-      "id": "mon/archunit",
-      "path": "public/game/mon/archunit.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 6386,
-      "fill": 0.4102
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/vanilla",
       "path": "public/game/mon/vanilla.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 7292,
-      "fill": 0.7492
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "mon/archunit",
+      "path": "public/game/mon/archunit.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/webgpu",
       "path": "public/game/mon/webgpu.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 9510,
-      "fill": 0.5291
-    },
-    {
-      "id": "mon/javascript",
-      "path": "public/game/mon/javascript.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 9718,
-      "fill": 0.7712
-    },
-    {
-      "id": "mon/sql",
-      "path": "public/game/mon/sql.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 6624,
-      "fill": 0.5795
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "mon/java",
       "path": "public/game/mon/java.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 9914,
-      "fill": 0.7127
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "mon/javascript",
+      "path": "public/game/mon/javascript.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bld-lab",
+      "path": "public/game/obj/bld-lab.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bld-house",
+      "path": "public/game/obj/bld-house.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "mon/sql",
+      "path": "public/game/mon/sql.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bld-office-1",
+      "path": "public/game/obj/bld-office-1.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bld-office-2",
+      "path": "public/game/obj/bld-office-2.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bld-office-3",
+      "path": "public/game/obj/bld-office-3.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bld-tower",
+      "path": "public/game/obj/bld-tower.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bld-cafe",
+      "path": "public/game/obj/bld-cafe.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bld-gym",
+      "path": "public/game/obj/bld-gym.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/tree",
+      "path": "public/game/obj/tree.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/tree-small",
+      "path": "public/game/obj/tree-small.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/rock",
+      "path": "public/game/obj/rock.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/bush",
+      "path": "public/game/obj/bush.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/sign",
+      "path": "public/game/obj/sign.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/fence",
+      "path": "public/game/obj/fence.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/lamp",
+      "path": "public/game/obj/lamp.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/mailbox",
+      "path": "public/game/obj/mailbox.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/flower",
+      "path": "public/game/obj/flower.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/desk",
+      "path": "public/game/obj/desk.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/shelf",
+      "path": "public/game/obj/shelf.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "obj/campfire",
+      "path": "public/game/obj/campfire.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "bg/battle-1",
@@ -277,22 +410,68 @@
       "note": "skip(이미 있음)"
     },
     {
+      "id": "bg/battle-3",
+      "path": "public/game/bg/battle-3.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
       "id": "bg/battle-2",
       "path": "public/game/bg/battle-2.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 18642,
-      "fill": 1
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "bg/battle-5",
+      "path": "public/game/bg/battle-5.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "bg/battle-4",
       "path": "public/game/bg/battle-4.webp",
       "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 10578,
-      "fill": 1
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "bg/title",
+      "path": "public/game/bg/title.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "char/aing-up",
+      "path": "public/game/char/aing-up.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "char/aing-side",
+      "path": "public/game/char/aing-side.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
+    },
+    {
+      "id": "char/prof-down",
+      "path": "public/game/char/prof-down.webp",
+      "ok": true,
+      "attempts": 0,
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "char/hero-down-2",
@@ -307,274 +486,36 @@
       "path": "public/game/char/hero-side-2.webp",
       "ok": true,
       "attempts": 0,
-      "model": "derive",
-      "bytes": 1110,
-      "fill": 0.2539
-    },
-    {
-      "id": "char/aing-down-2",
-      "path": "public/game/char/aing-down-2.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "derive",
-      "bytes": 2062,
-      "fill": 0.6139
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "char/hero-up-2",
       "path": "public/game/char/hero-up-2.webp",
       "ok": true,
       "attempts": 0,
-      "model": "derive",
-      "bytes": 1162,
-      "fill": 0.2969
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
-      "id": "obj/bld-house",
-      "path": "public/game/obj/bld-house.webp",
+      "id": "char/aing-down-2",
+      "path": "public/game/char/aing-down-2.webp",
       "ok": true,
       "attempts": 0,
-      "model": "repost",
-      "bytes": 8556,
-      "fill": 0.73
-    },
-    {
-      "id": "obj/bld-office-2",
-      "path": "public/game/obj/bld-office-2.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 18058,
-      "fill": 0.831
-    },
-    {
-      "id": "obj/bld-lab",
-      "path": "public/game/obj/bld-lab.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 15432,
-      "fill": 0.6431
-    },
-    {
-      "id": "obj/bld-office-1",
-      "path": "public/game/obj/bld-office-1.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 16558,
-      "fill": 0.7974
-    },
-    {
-      "id": "obj/bld-office-3",
-      "path": "public/game/obj/bld-office-3.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 16122,
-      "fill": 0.7367
-    },
-    {
-      "id": "obj/bld-gym",
-      "path": "public/game/obj/bld-gym.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 16450,
-      "fill": 0.7096
-    },
-    {
-      "id": "obj/tree-small",
-      "path": "public/game/obj/tree-small.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 1966,
-      "fill": 0.7051
-    },
-    {
-      "id": "obj/rock",
-      "path": "public/game/obj/rock.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 1808,
-      "fill": 0.7041
-    },
-    {
-      "id": "obj/tree",
-      "path": "public/game/obj/tree.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 4658,
-      "fill": 0.5171
-    },
-    {
-      "id": "obj/bush",
-      "path": "public/game/obj/bush.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 1888,
-      "fill": 0.6152
-    },
-    {
-      "id": "obj/fence",
-      "path": "public/game/obj/fence.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 1190,
-      "fill": 0.46
-    },
-    {
-      "id": "obj/sign",
-      "path": "public/game/obj/sign.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 1358,
-      "fill": 0.5791
-    },
-    {
-      "id": "obj/flower",
-      "path": "public/game/obj/flower.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 1702,
-      "fill": 0.5439
-    },
-    {
-      "id": "obj/lamp",
-      "path": "public/game/obj/lamp.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 794,
-      "fill": 0.1401
-    },
-    {
-      "id": "obj/mailbox",
-      "path": "public/game/obj/mailbox.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 1464,
-      "fill": 0.6416
-    },
-    {
-      "id": "obj/shelf",
-      "path": "public/game/obj/shelf.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 3828,
-      "fill": 0.8442
-    },
-    {
-      "id": "obj/campfire",
-      "path": "public/game/obj/campfire.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "repost",
-      "bytes": 1568,
-      "fill": 0.5928
-    },
-    {
-      "id": "bg/battle-3",
-      "path": "public/game/bg/battle-3.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 25996,
-      "fill": 1
-    },
-    {
-      "id": "obj/desk",
-      "path": "public/game/obj/desk.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 2546,
-      "fill": 0.8101
-    },
-    {
-      "id": "bg/battle-5",
-      "path": "public/game/bg/battle-5.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 21100,
-      "fill": 1
-    },
-    {
-      "id": "obj/bld-cafe",
-      "path": "public/game/obj/bld-cafe.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 7700,
-      "fill": 0.821
-    },
-    {
-      "id": "obj/bld-tower",
-      "path": "public/game/obj/bld-tower.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 26302,
-      "fill": 0.9083
-    },
-    {
-      "id": "char/aing-up",
-      "path": "public/game/char/aing-up.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 1902,
-      "fill": 0.625
-    },
-    {
-      "id": "char/prof-down",
-      "path": "public/game/char/prof-down.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 2554,
-      "fill": 0.623
-    },
-    {
-      "id": "char/aing-side",
-      "path": "public/game/char/aing-side.webp",
-      "ok": true,
-      "attempts": 1,
-      "model": "nano_banana_flash",
-      "bytes": 2462,
-      "fill": 0.7044
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "char/aing-up-2",
       "path": "public/game/char/aing-up-2.webp",
       "ok": true,
       "attempts": 0,
-      "model": "derive",
-      "bytes": 1882,
-      "fill": 0.6178
+      "model": "—",
+      "note": "skip(이미 있음)"
     },
     {
       "id": "char/aing-side-2",
       "path": "public/game/char/aing-side-2.webp",
-      "ok": true,
-      "attempts": 0,
-      "model": "derive",
-      "bytes": 2432,
-      "fill": 0.696
-    },
-    {
-      "id": "bg/title",
-      "path": "public/game/bg/title.webp",
       "ok": true,
       "attempts": 0,
       "model": "—",

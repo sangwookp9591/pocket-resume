@@ -14,10 +14,10 @@ export const SITE = {
   tagline: '문제를 만나면 필요한 기술을 연결해서 실제 서비스까지 만드는 개발자',
 };
 
-const wiki = (id) => WIKI.find((w) => w.id === id);
+const wiki = (id: string) => WIKI.find((w) => w.id === id);
 
-export function resumeMarkdown() {
-  const L = [];
+export function resumeMarkdown(): string {
+  const L: string[] = [];
   L.push(`# ${SITE.who}`, '', `> ${SITE.tagline}`, '');
   L.push(`- 메일: ${SITE.email}`, `- GitHub: ${SITE.github}`, `- 이 문서의 게임판: ${SITE.url}`, '');
   L.push('---', '', '## 한 줄', '');
@@ -57,7 +57,7 @@ export function resumeMarkdown() {
   return L.join('\n');
 }
 
-export function llmsTxt() {
+export function llmsTxt(): string {
   return [
     `# ${SITE.who}`,
     '',

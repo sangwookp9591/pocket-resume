@@ -6,9 +6,36 @@
 import { testAll, setFlag, addBadge, addMon } from './state.ts';
 import { byId } from '../../content/mons.ts';
 import { healParty } from './battle.ts';
+import type { Choice, Cmd, Face, GameState, MonId } from '../../content/types.ts';
+
+/** 러너가 밖으로 내는 것. UI는 이것만 보고 무엇을 그릴지 정합니다. */
+export type Step =
+  | { kind: 'text'; who: string | null; t: string; face: Face }
+  | { kind: 'banner'; text: string }
+  | { kind: 'fx'; fx: NonNullable<Cmd['fx']> }
+  | { kind: 'wait'; ms: number }
+  | { kind: 'input'; field: 'name' }
+  | { kind: 'battle'; battle: NonNullable<Cmd['battle']> }
+  | { kind: 'scene'; scene: NonNullable<Cmd['scene']> }
+  | { kind: 'warp'; warp: NonNullable<Cmd['warp']> }
+  | { kind: 'choose'; options: Array<{ i: number; label: string; desc: string | null }>; _raw: Choice[] }
+  | { kind: 'done'; blocked: boolean };
+
+export interface RunnerApi {
+  getState: () => GameState;
+  setState: (s: GameState) => void;
+}
+
+export interface Runner {
+  next: () => Step;
+  pick: (step: Step, i: number) => Step;
+  answer: (field: string, value: string) => Step;
+  readonly blocked: boolean;
+  readonly done: boolean;
+}
 
 /** '{name}'을(를) 실제 이름으로. 문장부호 규칙은 한국어 조사라 여기서 다루지 않습니다. */
-export function interpolate(text, state) {
+export function interpolate(text: string | undefined, state: GameState): string {
   return String(text ?? '').replaceAll('{name}', state.name || '너');
 }
 
@@ -17,19 +44,19 @@ export function interpolate(text, state) {
  * @param {object} api     { getState, setState }
  * @returns 걸음마다 { kind, ... }를 돌려주는 러너
  */
-export function createRunner(cmds, api) {
+export function createRunner(cmds: Cmd[], api: RunnerApi): Runner {
   const queue = [...cmds];
   let blocked = false; // { block: true }가 나왔는가 — 이동을 막을지 호출부가 봅니다
-  let face = 'neutral'; // 아잉의 현재 표정. text에 함께 실어 보냅니다
+  let face: Face = 'neutral'; // 아잉의 현재 표정. text에 함께 실어 보냅니다
   let done = false;
 
   const S = () => api.getState();
-  const put = (fn) => api.setState(fn(S()));
+  const put = (fn: (s: GameState) => GameState) => api.setState(fn(S()));
 
   /** 다음으로 보여 줄 것을 돌려줍니다. 아무것도 없으면 { kind: 'done' }. */
-  function next() {
+  function next(): Step {
     while (queue.length) {
-      const c = queue.shift();
+      const c = queue.shift()!; // while(queue.length) 뒤라 반드시 있습니다
 
       // ── 조건 ──
       if (c.require !== undefined) {
@@ -45,10 +72,10 @@ export function createRunner(cmds, api) {
       if (c.unless !== undefined) continue; // 조건이 이미 충족 → 이 줄은 건너뜁니다
 
       // ── 즉시 처리 ──
-      if (c.set) { put((s) => setFlag(s, c.set)); continue; }
-      if (c.badge) { put((s) => setFlag(addBadge(s, c.badge), `badge.${c.badge}`)); continue; }
-      if (c.give) { put((s) => addMon(s, c.give, startLevel(c.give))); continue; }
-      if (c.dex) { put((s) => addMon(s, c.dex, startLevel(c.dex))); continue; }
+      if (c.set) { const f = c.set; put((s) => setFlag(s, f)); continue; }
+      if (c.badge) { const b = c.badge; put((s) => setFlag(addBadge(s, b), `badge.${b}`)); continue; }
+      if (c.give) { const g = c.give; put((s) => addMon(s, g, startLevel(g))); continue; }
+      if (c.dex) { const d = c.dex; put((s) => addMon(s, d, startLevel(d))); continue; }
       if (c.heal) { put((s) => ({ ...s, party: healParty(s.party) })); continue; }
       if (c.face) { face = c.face; if (!('t' in c)) continue; }
       if (c.block) { blocked = true; continue; }
@@ -75,21 +102,21 @@ export function createRunner(cmds, api) {
     return finish();
   }
 
-  function finish() {
+  function finish(): Step {
     done = true;
     return { kind: 'done', blocked };
   }
 
   /** 선택지를 고릅니다. 고른 가지의 명령이 큐 맨 앞에 끼어듭니다. */
-  function pick(step, i) {
-    const branch = step._raw?.[i];
+  function pick(step: Step, i: number): Step {
+    const branch = step.kind === 'choose' ? step._raw[i] : undefined;
     if (!branch) throw new Error(`없는 선택지: ${i}`);
     queue.unshift(...(branch.then ?? []));
     return next();
   }
 
   /** 이름을 받습니다. */
-  function answer(field, value) {
+  function answer(field: string, value: string): Step {
     if (field === 'name') put((s) => ({ ...s, name: String(value).slice(0, 8).trim() || '아이언' }));
     return next();
   }
@@ -99,7 +126,7 @@ export function createRunner(cmds, api) {
 
 /* 잡은 기술의 시작 레벨. 서사 순서대로 올라갑니다 —
    1사에서 잡은 것이 4사에서 잡은 것과 같은 레벨이면 진행감이 없습니다. */
-function startLevel(id) {
+function startLevel(id: MonId): number {
   const where = byId[id]?.where ?? 1;
   return [5, 5, 12, 22, 44][where] ?? 5;
 }

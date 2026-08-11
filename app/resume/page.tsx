@@ -3,9 +3,10 @@ import { MONS, TYPES } from '../../content/mons.ts';
 import { WIKI } from '../../content/wiki.ts';
 import { SITE } from '../../lib/markdown.ts';
 import { resumeJsonLd } from '../../lib/jsonld.ts';
+import type { Metadata } from 'next';
 import './resume.css';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: '박상욱(iron) — 이력서',
   description: SITE.tagline,
   alternates: { canonical: '/resume' },

@@ -6,9 +6,10 @@ import {
   makeUnit, stats, damage, effectiveness, catchChance,
   initBattle, step, grantExp, healParty,
 } from '../lib/game/battle.ts';
+import type { MonId } from '../content/types.ts';
 
-const fixed = (v) => () => v;
-const battle = (opts = {}) =>
+const fixed = (v: number) => () => v;
+const battle = (opts: Record<string, unknown> = {}) =>
   initBattle({
     playerParty: [makeUnit('react', 20)],
     wild: makeUnit('spring', 10),
@@ -93,7 +94,7 @@ test('마지막 하나가 쓰러지면 lost, 남아 있으면 교체된다', () 
 });
 
 test('끝난 배틀은 더 진행되지 않는다', () => {
-  const done = { ...battle(), over: 'won' };
+  const done = { ...battle(), over: 'won' as const };
   assert.equal(step(done, { kind: 'move' }, fixed(0.5)), done);
 });
 
@@ -111,5 +112,5 @@ test('회복은 전원을 가득 채운다', () => {
 });
 
 test('없는 기술몬으로 유닛을 만들면 던진다 — 조용히 undefined가 되지 않게', () => {
-  assert.throws(() => makeUnit('nope', 5), /없는 기술몬/);
+  assert.throws(() => makeUnit('nope' as MonId, 5), /없는 기술몬/);
 });

@@ -8,11 +8,29 @@ import { bakeTileAtlas, tileNames } from '../engine/tilegen.ts';
 import { TILE, CHAR_W, CHAR_H, MON_SIZE } from '../engine/config.ts';
 import { PALETTE } from '../engine/palette.ts';
 import { MONS } from '../../content/mons.ts';
+import type { Dir } from '../../content/types.ts';
+
+type Renderer = { addTexture: (key: string, image: CanvasImageSource) => unknown };
+type Kind = 'char' | 'obj' | 'mon' | 'bg';
+
+/** 에셋 한 장의 규격. 로딩과 자리표시자가 같은 표를 봅니다. */
+export interface AssetEntry {
+  key: string;
+  w: number;
+  h: number;
+  kind: Kind;
+  id?: string;
+  name?: string;
+  dir?: string;
+  f?: number;
+  /** 파일을 찾지 않고 항상 코드로 그립니다 */
+  always?: boolean;
+}
 
 const BASE = '/game';
 
 /** 계약 5.D. [id, 가로 타일, 세로 타일] */
-export const OBJECTS = [
+export const OBJECTS: Array<[string, number, number]> = [
   ['bld-lab', 4, 3], ['bld-house', 3, 2], ['bld-office-1', 4, 3], ['bld-office-2', 4, 3],
   ['bld-office-3', 4, 3], ['bld-tower', 5, 4], ['bld-cafe', 3, 2], ['bld-gym', 4, 3],
   ['tree', 2, 2], ['tree-small', 1, 1], ['rock', 1, 1], ['bush', 1, 1],
@@ -23,7 +41,7 @@ export const OBJECTS = [
 /* 계약 5.B. [이름, 가진 방향, 걷기 2프레임 여부]
    NPC는 맵에서 한 방향으로만 서 있으므로 정면 한 장이면 충분합니다 —
    없는 방향을 요청하면 매번 404를 맞고 자리표시자로 덮입니다. */
-export const CHARS = [
+export const CHARS: Array<[string, string[], boolean]> = [
   ['hero', ['down', 'up', 'side'], true],
   ['aing', ['down', 'up', 'side'], true],
   ['prof', ['down'], false],
@@ -38,11 +56,11 @@ const DIRS_OF = Object.fromEntries(CHARS.map(([n, d]) => [n, d]));
 
 /* 실내 구조물. AI에 시키지 않고 항상 코드로 그립니다 —
    벽·창·문·계단은 타일 격자에 딱 맞아야 하는데 AI 생성물은 절대 안 맞습니다. */
-export const PROCEDURAL_OBJ = ['wall', 'window', 'counter', 'door', 'stairs'];
+export const PROCEDURAL_OBJ: string[] = ['wall', 'window', 'counter', 'door', 'stairs'];
 
 /** 캐릭터 스프라이트 키. side는 좌우 미러링이므로 left/right 둘 다 side를 씁니다.
     그 캐릭터에 없는 방향이면 정면으로 떨어뜨립니다 — 빈 칸이 생기지 않게. */
-export function charKey(name, dir, frame = 0) {
+export function charKey(name: string, dir: Dir | string, frame = 0): string {
   const want = dir === 'left' || dir === 'right' ? 'side' : dir;
   const have = DIRS_OF[name] ?? ['down'];
   const d = have.includes(want) ? want : 'down';
@@ -50,13 +68,13 @@ export function charKey(name, dir, frame = 0) {
   return `char/${name}-${d}${frame && two ? '-2' : ''}`;
 }
 
-export const objKey = (id) => `obj/${id}`;
-export const monKey = (id) => `mon/${id}`;
-export const bgKey = (id) => `bg/${id}`;
+export const objKey = (id: string) => `obj/${id}`;
+export const monKey = (id: string) => `mon/${id}`;
+export const bgKey = (id: string) => `bg/${id}`;
 
 /** 모든 에셋 키와 그 규격·소스 경로. 하나의 표가 로딩과 자리표시자를 같이 설명합니다. */
-export function manifest() {
-  const out = [];
+export function manifest(): AssetEntry[] {
+  const out: AssetEntry[] = [];
   for (const [name, dirs, twoFrame] of CHARS) {
     for (const d of dirs) {
       out.push({ key: `char/${name}-${d}`, w: CHAR_W, h: CHAR_H, kind: 'char', name, dir: d });
@@ -80,15 +98,20 @@ export function manifest() {
  * 렌더러에 전부 등록합니다.
  * @returns {{loaded:number, placeholder:string[], atlasTiles:number}}
  */
-export async function loadAssets(renderer, { onProgress } = {}) {
+export async function loadAssets(
+  renderer: Renderer,
+  { onProgress }: { onProgress?: (done: number, total: number) => void } = {},
+): Promise<{ loaded: number; placeholder: string[]; atlasTiles: number }> {
   const tiles = bakeTileAtlas();
+  if (!tiles.canvas) throw new Error('[assets] 타일 아틀라스를 구울 캔버스가 없습니다');
   // 절차 타일은 아틀라스 한 장이지만, 렌더러에는 타일마다 따로 넣어야 UV가 맞습니다.
-  for (const [name, [x, y, w, h]] of Object.entries(tiles.uv)) {
+  const uv = tiles.uv as Record<string, [number, number, number, number]>;
+  for (const [name, [x, y, w, h]] of Object.entries(uv)) {
     renderer.addTexture(`tile/${name}`, cut(tiles.canvas, x, y, w, h));
   }
 
   const list = manifest();
-  const placeholder = [];
+  const placeholder: string[] = [];
   let loaded = 0;
   let done = 0;
 
@@ -123,7 +146,7 @@ export async function loadAssets(renderer, { onProgress } = {}) {
   return { loaded, placeholder, atlasTiles: tileNames().length };
 }
 
-async function tryLoad(url) {
+async function tryLoad(url: string): Promise<ImageBitmap | null> {
   try {
     // cache: 'force-cache'를 쓰면 안 됩니다 — 한 번 404가 나면 그 404가 캐시에 남아,
     // 나중에 파일을 채워 넣어도 브라우저가 영영 자리표시자를 그립니다.
@@ -135,9 +158,9 @@ async function tryLoad(url) {
   }
 }
 
-function cut(src, x, y, w, h) {
+function cut(src: CanvasImageSource, x: number, y: number, w: number, h: number): OffscreenCanvas {
   const c = new OffscreenCanvas(w, h);
-  c.getContext('2d').drawImage(src, x, y, w, h, 0, 0, w, h);
+  c.getContext('2d')!.drawImage(src, x, y, w, h, 0, 0, w, h);
   return c;
 }
 
@@ -148,11 +171,11 @@ function cut(src, x, y, w, h) {
 // palette.js는 iceBlue·indigo로 부릅니다. 여기서는 짧은 이름을 쓰므로 한 줄로 맞춰 둡니다.
 const P = { ...PALETTE, ice: PALETTE.iceBlue, ink: PALETTE.indigo };
 const HUES = [P.moss, P.pine, P.bark, P.ice, P.lavender, P.dusk, P.ember, P.blush];
-const pick = (s) => HUES[[...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % HUES.length];
+const pick = (s: string): string => HUES[[...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % HUES.length]!;
 
-function makePlaceholder(m) {
+function makePlaceholder(m: AssetEntry): OffscreenCanvas {
   const c = new OffscreenCanvas(m.w, m.h);
-  const g = c.getContext('2d');
+  const g = c.getContext('2d')!;
   g.imageSmoothingEnabled = false;
   if (m.kind === 'char') drawChar(g, m);
   else if (m.kind === 'obj') drawObj(g, m);
@@ -162,8 +185,8 @@ function makePlaceholder(m) {
 }
 
 /** 사람 모양. 늘 화면에 있으니 이것만은 읽히게 그립니다. */
-function drawChar(g, { w, h, name, dir, f }) {
-  const body = name === 'aing' ? P.cream : pick(name);
+function drawChar(g: OffscreenCanvasRenderingContext2D, { w, h, name, dir, f }: AssetEntry): void {
+  const body = name === 'aing' ? P.cream : pick(name ?? '');
   const hair = name === 'aing' ? P.ice : P.ink;
   const cx = w / 2;
   const foot = h;
@@ -190,14 +213,14 @@ function drawChar(g, { w, h, name, dir, f }) {
   g.fillRect(cx + 2, foot - 5 + bob, 4, 5 - bob);
 }
 
-function drawObj(g, { w, h, id }) {
-  const col = pick(id);
+function drawObj(g: OffscreenCanvasRenderingContext2D, { w, h, id }: AssetEntry): void {
+  const col = pick(id ?? '');
   g.fillStyle = 'rgba(0,0,0,0.16)';
   g.beginPath();
   g.ellipse(w / 2, h - 3, w * 0.4, 3.5, 0, 0, Math.PI * 2);
   g.fill();
 
-  if (id.startsWith('bld-')) {
+  if (id?.startsWith('bld-')) {
     g.fillStyle = P.cream;
     g.fillRect(2, h * 0.38, w - 4, h * 0.62 - 4);
     g.fillStyle = col; // 지붕
@@ -230,15 +253,15 @@ function drawObj(g, { w, h, id }) {
 }
 
 /** 기술몬. 배틀에서 크게 나오므로 최소한 실루엣은 다르게 보이게 합니다. */
-function drawMon(g, { w, h, id }) {
-  const col = pick(id);
+function drawMon(g: OffscreenCanvasRenderingContext2D, { w, h, id }: AssetEntry): void {
+  const col = pick(id ?? '');
   const r = w * 0.3;
   g.fillStyle = 'rgba(0,0,0,0.15)';
   g.beginPath(); g.ellipse(w / 2, h - 8, r, 6, 0, 0, Math.PI * 2); g.fill();
   g.fillStyle = col;
   g.beginPath(); g.ellipse(w / 2, h * 0.55, r, r * 1.05, 0, 0, Math.PI * 2); g.fill();
   // 귀 — id마다 각도가 달라 실루엣이 갈립니다
-  const a = ([...id].reduce((s, c) => s + c.charCodeAt(0), 0) % 7) * 0.12 + 0.3;
+  const a = ([...(id ?? '')].reduce((s, c) => s + c.charCodeAt(0), 0) % 7) * 0.12 + 0.3;
   for (const s of [-1, 1]) {
     g.beginPath();
     g.moveTo(w / 2 + s * r * 0.5, h * 0.55 - r * 0.7);
@@ -255,7 +278,7 @@ function drawMon(g, { w, h, id }) {
 }
 
 /* 실내 구조물. 타일 격자에 딱 맞는 납작한 그림이라 이대로 최종본입니다. */
-function drawInterior(g, w, h, id) {
+function drawInterior(g: OffscreenCanvasRenderingContext2D, w: number, h: number, id: string): void {
   if (id === 'wall' || id === 'window') {
     g.fillStyle = mixHex(P.cream, P.ink, 0.55);
     g.fillRect(0, 0, w, h);
@@ -295,14 +318,14 @@ function drawInterior(g, w, h, id) {
 }
 
 /** 팔레트 두 색을 섞습니다. palette.js의 mix는 rgb 배열을 받아서 여기선 hex로 감쌉니다. */
-function mixHex(a, b, t) {
-  const h = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+function mixHex(a: string, b: string, t: number): string {
+  const h = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)) as [number, number, number];
   const [ar, ag, ab] = h(a); const [br, bg, bb] = h(b);
   const r = Math.round(ar + (br - ar) * t), gg = Math.round(ag + (bg - ag) * t), bl = Math.round(ab + (bb - ab) * t);
   return `rgb(${r},${gg},${bl})`;
 }
 
-function drawBg(g, { w, h }) {
+function drawBg(g: OffscreenCanvasRenderingContext2D, { w, h }: AssetEntry): void {
   const sky = g.createLinearGradient(0, 0, 0, h);
   sky.addColorStop(0, P.ice);
   sky.addColorStop(1, P.cream);

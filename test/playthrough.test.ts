@@ -5,23 +5,26 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRunner } from '../lib/game/runner.ts';
+import { createRunner, type Step } from '../lib/game/runner.ts';
+import type { BattleSpec, GameState, MonId } from '../content/types.ts';
 import { createState, testAll, addMon, save, load, serialize, deserialize } from '../lib/game/state.ts';
 import { initBattle, makeUnit, step as bstep } from '../lib/game/battle.ts';
 import { createWorld } from '../lib/game/world.ts';
 import { SCRIPTS } from '../content/script.ts';
 import { MONS, byId } from '../content/mons.ts';
+import type { Cmd } from '../content/types.ts';
 import { BADGES } from '../content/journey.ts';
+import type { BadgeId, MapId } from '../content/types.ts';
 import { MAPS, MAP_ORDER } from '../content/maps.ts';
 
 /** 한 판을 진행하는 작은 하네스. Game.jsx가 하는 일과 같은 순서로 돕니다. */
 function makeSession() {
-  let state = createState();
-  const log = [];
-  const api = { getState: () => state, setState: (s) => (state = s) };
+  let state: GameState = createState();
+  const log: string[] = [];
+  const api = { getState: () => state, setState: (s: GameState) => { state = s; } };
 
   /** 스크립트 하나를 끝까지. 배틀이 나오면 진짜 배틀 모듈로 결판냅니다. */
-  function run(name, { pick = 0, playerName = '상욱', maxSteps = 400 } = {}) {
+  function run(name: string, { pick = 0, playerName = '상욱', maxSteps = 400 }: { pick?: number; playerName?: string; maxSteps?: number } = {}): { blocked?: boolean; scene?: string } {
     const cmds = SCRIPTS[name];
     assert.ok(cmds, `없는 스크립트: ${name}`);
     const r = createRunner(cmds, api);
@@ -54,7 +57,7 @@ function makeSession() {
   }
 
   /** 실제 배틀 모듈로 싸웁니다. rng를 0으로 고정하면 볼이 반드시 성공합니다. */
-  function fight(spec) {
+  function fight(spec: BattleSpec): void {
     const party = state.party.length ? state.party : [makeUnit('spring', 5)];
     let b = initBattle({
       playerParty: party,
@@ -150,13 +153,13 @@ test('처음부터 끝까지 한 판이 끝난다', () => {
   assert.equal(g.state.badges.length, 4, `배지가 ${g.state.badges.length}개`);
   assert.equal(g.state.dex.length, MONS.length,
     `도감이 ${g.state.dex.length}/${MONS.length} — 못 잡은 것: ${MONS.map((m) => m.id).filter((id) => !g.state.dex.includes(id))}`);
-  for (const b of Object.keys(BADGES)) assert.ok(g.state.badges.includes(b), `${b} 배지 누락`);
+  for (const b of Object.keys(BADGES) as BadgeId[]) assert.ok(g.state.badges.includes(b), `${b} 배지 누락`);
 });
 
 test('마지막 문답은 어느 쪽을 골라도 같은 결론에 닿는다 — 그게 주제다', () => {
   for (const pick of [0, 1]) {
     const g = makeSession();
-    g.state = { ...createState(), name: '상욱', dex: MONS.map((m) => m.id), badges: Object.keys(BADGES) };
+    g.state = { ...createState(), name: '상욱', dex: MONS.map((m) => m.id), badges: Object.keys(BADGES) as BadgeId[] };
     const end = g.run('road.finale', { pick });
     assert.equal(end.scene, 'hall');
     const all = g.log.join('\n');
@@ -166,10 +169,10 @@ test('마지막 문답은 어느 쪽을 골라도 같은 결론에 닿는다 —
 });
 
 test('모든 맵이 lab에서 걸어서 닿는다 — 도달 불가능한 맵이 없게', () => {
-  const seen = new Set(['lab']);
-  const queue = ['lab'];
+  const seen = new Set<MapId>(['lab']);
+  const queue: MapId[] = ['lab'];
   while (queue.length) {
-    for (const w of MAPS[queue.shift()].warps ?? []) {
+    for (const w of MAPS[queue.shift()!]!.warps ?? []) {
       if (!seen.has(w.to)) { seen.add(w.to); queue.push(w.to); }
     }
   }
@@ -183,11 +186,11 @@ test('맵마다 스폰 지점에서 워프 지점까지 갈 수 있다', () => {
     const w = createWorld(id, { ...createState(), ...MAPS[id].spawn });
     const m = w.map;
     const seen = new Set();
-    const key = (x, y) => `${x},${y}`;
-    const q = [[MAPS[id].spawn.x, MAPS[id].spawn.y]];
-    seen.add(key(...q[0]));
+    const key = (x: number, y: number) => `${x},${y}`;
+    const q: Array<[number, number]> = [[MAPS[id].spawn.x, MAPS[id].spawn.y]];
+    seen.add(key(q[0]![0], q[0]![1]));
     while (q.length) {
-      const [x, y] = q.shift();
+      const [x, y] = q.shift()!;
       for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
         const nx = x + dx;
         const ny = y + dy;
@@ -254,7 +257,7 @@ test('localStorage가 없어도 저장이 게임을 멈추지 않는다', () => 
 test('모든 기술몬이 서사에서 실제로 손에 들어온다', () => {
   // 위 플레이스루가 도감을 다 채웠으므로, 여기서는 각 몬이 어디서 오는지를 명시적으로 확인합니다.
   const fromScript = new Set();
-  const walk = (cmds) => {
+  const walk = (cmds: Cmd[]) => {
     for (const c of cmds) {
       if (c.give) fromScript.add(c.give);
       if (c.dex) fromScript.add(c.dex);

@@ -3,10 +3,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createWorld, rollEncounter, camera, STEP_MS } from '../lib/game/world.ts';
 import { createState } from '../lib/game/state.ts';
+import type { Dir, MapId } from '../content/types.ts';
 
-const fixed = (v) => () => v;
+const fixed = (v: number) => () => v;
 /** 한 칸 걷기를 끝까지 진행합니다. */
-const walk = (w, dir, run = false) => {
+const walk = (w: ReturnType<typeof createWorld>, dir: Dir, run = false) => {
   w.press(dir, run);
   w.press(dir, run); // 첫 입력은 방향 전환일 수 있습니다 (포켓몬과 같음)
   for (let i = 0; i < 30 && w.moving; i++) w.update(STEP_MS / 4);
@@ -14,7 +15,7 @@ const walk = (w, dir, run = false) => {
 };
 
 test('없는 맵을 열면 던진다', () => {
-  assert.throws(() => createWorld('없는맵', createState()), /없는 맵/);
+  assert.throws(() => createWorld('없는맵' as MapId, createState()), /없는 맵/);
 });
 
 test('첫 입력은 방향만 바꾸고, 두 번째에 움직인다', () => {

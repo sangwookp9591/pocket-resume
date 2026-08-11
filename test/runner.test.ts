@@ -2,19 +2,20 @@
    실제 스크립트(content/script.js) 전부를 끝까지 밟아 보는 검사가 마지막에 있습니다. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRunner, interpolate } from '../lib/game/runner.ts';
+import { createRunner, interpolate, type Step } from '../lib/game/runner.ts';
+import type { Cmd, GameState } from '../content/types.ts';
 import { createState, testAll } from '../lib/game/state.ts';
 import { SCRIPTS } from '../content/script.ts';
 
-function run(cmds, init = createState()) {
-  let state = init;
+function run(cmds: Cmd[], init: GameState = createState()) {
+  let state: GameState = init;
   const r = createRunner(cmds, { getState: () => state, setState: (s) => (state = s) });
   return { r, get state() { return state; } };
 }
 
 /** 러너를 끝까지 밟습니다. 선택지는 pick(고를 가지)로 고릅니다. */
-function drain(ctx, { pick = 0, name = '테스트', max = 500 } = {}) {
-  const seen = [];
+function drain(ctx: ReturnType<typeof run>, { pick = 0, name = '테스트', max = 500 }: { pick?: number; name?: string; max?: number } = {}) {
+  const seen: Step[] = []; 
   let step = ctx.r.next();
   for (let n = 0; n < max; n++) {
     seen.push(step);
@@ -119,7 +120,7 @@ test('face가 대사에 실려 나온다', () => {
 });
 
 test('모르는 명령은 던진다 — 조용히 버리면 나중에 대사가 사라진다', () => {
-  const c = run([{ 이상한거: 1 }]);
+  const c = run([{ 이상한거: 1 } as unknown as Cmd]);
   assert.throws(() => c.r.next(), /모르는 명령/);
 });
 

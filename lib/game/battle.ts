@@ -2,11 +2,33 @@
    포켓몬의 공식을 그대로 쓰지 않고 읽히는 만큼만 단순화했습니다. */
 
 import { byId, EFFECT } from '../../content/mons.ts';
+import type { ComputedStats, Mon, MonId, PartyUnit, TypeId } from '../../content/types.ts';
+
+/** 배틀 한 판의 전부. 순수 값이라 스냅숏으로 저장·비교가 됩니다. */
+export interface BattleState {
+  party: PartyUnit[];
+  active: number;
+  foe: PartyUnit;
+  scripted: 'win' | 'lose' | null;
+  turn: 'player' | 'foe';
+  over: null | 'caught' | 'won' | 'lost' | 'fled';
+  log: string[];
+  bg: number;
+  ballsThrown: number;
+}
+
+export type Action =
+  | { kind: 'move'; idx?: number }
+  | { kind: 'ball' }
+  | { kind: 'run' }
+  | { kind: 'switch'; idx: number };
+
+export type Rng = () => number;
 
 export const MAX_PARTY = 6;
 
 /** 레벨에 따른 실제 능력치. 포켓몬의 개체값·노력치는 없습니다 — 그럴 이유가 없습니다. */
-export function stats(mon, level) {
+export function stats(mon: Pick<Mon, 'base'>, level: number): ComputedStats {
   const b = mon.base;
   return {
     maxHp: Math.floor((b.hp * 2 * level) / 100) + level + 10,
@@ -16,7 +38,7 @@ export function stats(mon, level) {
   };
 }
 
-export function makeUnit(monId, level) {
+export function makeUnit(monId: MonId, level: number): PartyUnit {
   const mon = byId[monId];
   if (!mon) throw new Error(`없는 기술몬: ${monId}`);
   const s = stats(mon, level);
@@ -24,12 +46,12 @@ export function makeUnit(monId, level) {
 }
 
 /** 상성 배율. 표에 없으면 1배. */
-export function effectiveness(atkType, defType) {
+export function effectiveness(atkType: TypeId, defType: TypeId): number {
   return EFFECT[atkType]?.[defType] ?? 1;
 }
 
 /** 데미지. rng는 0~1을 돌려주는 함수 — 테스트에서 고정합니다. */
-export function damage(attacker, defender, rng) {
+export function damage(attacker: PartyUnit, defender: PartyUnit, rng: Rng): { dmg: number; eff: number } {
   const eff = effectiveness(attacker.mon.type, defender.mon.type);
   const stab = 1.5; // 자기 타입 기술만 있으므로 항상 붙습니다
   const base = ((2 * attacker.level) / 5 + 2) * 40 * (attacker.atk / defender.def);
@@ -39,13 +61,19 @@ export function damage(attacker, defender, rng) {
 }
 
 /** 포획 확률. HP를 깎을수록, catchRate가 높을수록 잘 잡힙니다. */
-export function catchChance(target) {
+export function catchChance(target: PartyUnit): number {
   const hpTerm = (3 * target.maxHp - 2 * target.hp) / (3 * target.maxHp);
   const p = hpTerm * (target.mon.catchRate / 255);
   return Math.min(0.95, Math.max(0.04, p));
 }
 
-export function initBattle({ playerParty, wild, scripted = null, intro = '', bg = 1 }) {
+export function initBattle({ playerParty, wild, scripted = null, intro = '', bg = 1 }: {
+  playerParty: PartyUnit[];
+  wild: PartyUnit;
+  scripted?: 'win' | 'lose' | null;
+  intro?: string;
+  bg?: number;
+}): BattleState {
   return {
     party: playerParty,
     active: 0,
@@ -59,10 +87,10 @@ export function initBattle({ playerParty, wild, scripted = null, intro = '', bg 
   };
 }
 
-const me = (s) => s.party[s.active];
+const me = (s: BattleState): PartyUnit => s.party[s.active]!;
 
 /** 한 턴을 진행합니다. action: {kind:'move'|'ball'|'run'|'switch', idx?} */
-export function step(state, action, rng = Math.random) {
+export function step(state: BattleState, action: Action, rng: Rng = Math.random): BattleState {
   if (state.over) return state;
   const s = { ...state, log: [...state.log] };
 
@@ -82,7 +110,7 @@ export function step(state, action, rng = Math.random) {
     case 'switch':
       return doSwitch(s, action.idx);
     default:
-      throw new Error(`모르는 행동: ${action.kind}`);
+      throw new Error(`모르는 행동: ${JSON.stringify(action)}`);
   }
 
   if (s.foe.hp <= 0) {
@@ -100,7 +128,7 @@ export function step(state, action, rng = Math.random) {
   return s;
 }
 
-function playerMove(s, idx, rng) {
+function playerMove(s: BattleState, idx: number, rng: Rng): void {
   const u = me(s);
   const { dmg, eff } = damage(u, s.foe, rng);
   s.foe = { ...s.foe, hp: Math.max(0, s.foe.hp - dmg) };
@@ -109,7 +137,7 @@ function playerMove(s, idx, rng) {
   if (eff < 1) s.log.push('효과가 별로인 듯하다…');
 }
 
-function foeMove(s, rng) {
+function foeMove(s: BattleState, rng: Rng): void {
   const u = me(s);
   const { dmg, eff } = damage(s.foe, u, rng);
   const nu = { ...u, hp: Math.max(0, u.hp - dmg) };
@@ -118,7 +146,7 @@ function foeMove(s, rng) {
   if (eff > 1) s.log.push('효과가 굉장했다!');
 }
 
-function throwBall(s, rng) {
+function throwBall(s: BattleState, rng: Rng): boolean {
   s.ballsThrown++;
   s.log.push('기술볼을 던졌다!');
   if (s.party.length >= MAX_PARTY) {
@@ -141,7 +169,7 @@ function throwBall(s, rng) {
   return true;
 }
 
-function tryRun(s, rng) {
+function tryRun(s: BattleState, rng: Rng): boolean {
   const odds = (me(s).spd * 128) / Math.max(1, s.foe.spd) + 30;
   if (rng() * 256 < odds) {
     s.log.push('무사히 도망쳤다!');
@@ -153,7 +181,7 @@ function tryRun(s, rng) {
   return true;
 }
 
-function doSwitch(s, idx) {
+function doSwitch(s: BattleState, idx: number): BattleState {
   if (idx === s.active || !s.party[idx] || s.party[idx].hp <= 0) return s;
   s.log.push(`돌아와, ${me(s).mon.name}! 가라, ${s.party[idx].mon.name}!`);
   return { ...s, active: idx };
@@ -161,7 +189,7 @@ function doSwitch(s, idx) {
 
 /* 파도항구의 실력자 전. 이기는 배틀이 아니라 지는 장면이라 게임플레이가 아닙니다.
    그래도 몇 대는 때릴 수 있게 둡니다 — 손도 못 쓰고 지면 서사가 아니라 사고로 읽힙니다. */
-function loseScripted(s, action) {
+function loseScripted(s: BattleState, action: Action): BattleState {
   if (action.kind === 'run') {
     s.log.push('도망칠 수 없다!');
   } else if (action.kind === 'ball') {
@@ -189,11 +217,11 @@ function loseScripted(s, action) {
 }
 
 /** 전투 후 경험치. 레벨은 도감 완성도와 무관하게 서사 진행에 맞춰 올라갑니다. */
-export function grantExp(unit, foe) {
+export function grantExp(unit: PartyUnit, foe: PartyUnit): PartyUnit {
   const gain = Math.max(1, Math.floor((foe.level * 3) / 2));
   let { level } = unit;
   let exp = (unit.exp ?? 0) + gain;
-  const need = (l) => l * 12;
+  const need = (l: number) => l * 12;
   while (exp >= need(level) && level < 100) {
     exp -= need(level);
     level++;
@@ -203,6 +231,6 @@ export function grantExp(unit, foe) {
   return { ...unit, level, exp, ...s, hp: Math.min(s.maxHp, unit.hp + (s.maxHp - unit.maxHp)) };
 }
 
-export function healParty(party) {
+export function healParty(party: PartyUnit[]): PartyUnit[] {
   return party.map((u) => ({ ...u, hp: u.maxHp }));
 }

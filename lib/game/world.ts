@@ -4,25 +4,45 @@
 import { parseMap, isSolid, isEncounterTile } from '../engine/map.ts';
 import { MAPS } from '../../content/maps.ts';
 import { testAll } from './state.ts';
+import type { ParsedMap } from '../engine/map.ts';
+import type { Dir, GameState, MapEvent, MapId, MonId, Npc, Warp } from '../../content/types.ts';
+
+/** 월드가 밖으로 내는 사건. Game.tsx가 이것만 보고 다음을 정합니다. */
+export type WorldEvent =
+  | { kind: 'warp'; warp: Warp }
+  | { kind: 'encounter'; mon: MonId }
+  | { kind: 'script'; script: string; event?: MapEvent; npc?: Npc; faceBack?: boolean };
+
+export interface Actor { x: number; y: number; dir: Dir; frame: number }
+export interface WorldView {
+  map: ParsedMap;
+  player: Actor & { tx: number; ty: number; moving: boolean };
+  follower: Actor;
+  trail: Array<{ x: number; y: number; dir: Dir }>;
+}
 
 export const STEP_MS = 160; // 한 칸
 export const RUN_MS = 96;
-const DIRV = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const DIRV: Record<Dir, readonly [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 /** HGSS처럼 파트너가 뒤를 따라옵니다. 지나온 칸을 기억했다가 한 칸 늦게 밟습니다. */
 const TRAIL = 2;
 
-export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
+export function createWorld(
+  mapId: MapId,
+  state: GameState,
+  { onEvent, rng = Math.random }: { onEvent?: (e: WorldEvent) => void; rng?: () => number } = {},
+) {
   let map = load(mapId);
   let px = state.x;
   let py = state.y;
   let dir = state.dir ?? 'down';
-  let moving = null; // { fx, fy, tx, ty, t, ms }
+  let moving: { fx: number; fy: number; tx: number; ty: number; t: number; ms: number } | null = null;
   let trail = seedTrail(px, py, dir);
   let stepsSince = 0;
-  let pending = null; // 이번 프레임에 밖으로 낼 것
+  let pending: WorldEvent | null = null; // 이번 프레임에 밖으로 낼 것
 
-  function load(id) {
+  function load(id: MapId): ParsedMap {
     const def = MAPS[id];
     if (!def) throw new Error(`없는 맵: ${id}`);
     return parseMap(def);
@@ -30,7 +50,7 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
 
   /* 파트너는 한 칸 뒤에서 시작합니다. 같은 칸에서 시작하면 걷기 전까지 겹쳐 보입니다.
      뒤가 막혀 있으면(벽을 등지고 스폰) 어쩔 수 없이 같은 칸에 둡니다. */
-  function seedTrail(x, y, d) {
+  function seedTrail(x: number, y: number, d: Dir) {
     const [dx, dy] = DIRV[d] ?? [0, 1];
     const bx = x - dx;
     const by = y - dy;
@@ -40,18 +60,18 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
   }
 
   /** NPC가 서 있는 칸도 막힙니다. 맵 파서는 NPC를 모르므로 여기서 겹쳐 봅니다. */
-  function blocked(x, y) {
+  function blocked(x: number, y: number): boolean {
     if (x < 0 || y < 0 || x >= map.w || y >= map.h) return true;
     if (isSolid(map, x, y)) return true;
     return (map.npcs ?? []).some((n) => n.x === x && n.y === y);
   }
 
-  function at(list, x, y) {
+  function at<T extends { x: number; y: number }>(list: T[] | undefined, x: number, y: number): T | undefined {
     return (list ?? []).find((e) => e.x === x && e.y === y);
   }
 
   /** 방향키. 이미 걷는 중이면 무시합니다 — 그리드 이동이라 한 칸씩만 갑니다. */
-  function press(d, run = false) {
+  function press(d: Dir | null, run = false): void {
     if (moving || !d) return;
     // 방향만 바뀌는 경우: 포켓몬은 제자리에서 한 번 돌아봅니다
     if (dir !== d) {
@@ -65,7 +85,7 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
     moving = { fx: px, fy: py, tx: nx, ty: ny, t: 0, ms: run ? RUN_MS : STEP_MS };
   }
 
-  function update(dtMs) {
+  function update(dtMs: number): void {
     if (!moving) return;
     moving.t += dtMs;
     if (moving.t < moving.ms) return;
@@ -79,7 +99,7 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
   }
 
   /** 한 칸 다 밟은 순간. 워프 → 트리거 → 인카운터 순으로 봅니다. */
-  function arrive() {
+  function arrive(): WorldEvent | null {
     const w = at(map.warps, px, py);
     if (w) return emit({ kind: 'warp', warp: w });
 
@@ -100,14 +120,14 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
 
   /* 맵 이벤트의 unless는 "그게 아직 아니라면 발동" 입니다 — 스크립트 명령의 unless와 반대라
      여기서만 이 뜻으로 씁니다. once는 플래그로 기억합니다. */
-  function allowed(e) {
+  function allowed(e: MapEvent): boolean {
     if (e.once && state.flags.includes(`ev.${e.script}`)) return false;
     if (e.unless && testAll(state, e.unless)) return false;
     return true;
   }
 
   /** A버튼. 바라보는 칸의 NPC나 interact 이벤트를 집습니다. */
-  function interact() {
+  function interact(): WorldEvent | null {
     const [dx, dy] = DIRV[dir];
     const fx = px + dx;
     const fy = py + dy;
@@ -124,13 +144,13 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
     return under ? { kind: 'script', script: under.script, event: under } : null;
   }
 
-  function emit(x) {
+  function emit(x: WorldEvent): WorldEvent {
     pending = x;
     onEvent?.(x);
     return x;
   }
 
-  function goto(id, x, y, d) {
+  function goto(id: MapId, x: number, y: number, d?: Dir): WorldEvent | null {
     map = load(id);
     px = x;
     py = y;
@@ -143,7 +163,7 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
   }
 
   /** 렌더러가 쓸 값. 픽셀 좌표는 타일 단위 소수입니다 — 배율은 렌더러가 곱합니다. */
-  function view() {
+  function view(): WorldView {
     const p = moving ? moving.t / moving.ms : 0;
     const x = moving ? moving.fx + (moving.tx - moving.fx) * p : px;
     const y = moving ? moving.fy + (moving.ty - moving.fy) * p : py;
@@ -158,7 +178,7 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
   }
 
   /* 파트너는 한 칸 뒤를 따라옵니다. 플레이어가 서 있으면 같이 섭니다. */
-  function follower(p) {
+  function follower(p: number): Actor {
     const a = trail[1] ?? trail[0];
     const b = trail[0];
     if (!moving || !a) return { x: a?.x ?? px, y: a?.y ?? py, dir: a?.dir ?? dir, frame: 0 };
@@ -180,22 +200,22 @@ export function createWorld(mapId, state, { onEvent, rng = Math.random } = {}) {
 }
 
 /** 가중치 표에서 하나 뽑기. 합이 100인지는 test/content.test.js가 봅니다. */
-export function rollEncounter(table, rng = Math.random) {
+export function rollEncounter(table: Array<[MonId, number]>, rng: () => number = Math.random): MonId {
   const total = table.reduce((a, [, w]) => a + w, 0);
   let r = rng() * total;
   for (const [id, w] of table) {
     r -= w;
     if (r <= 0) return id;
   }
-  return table[table.length - 1][0];
+  return table[table.length - 1]![0];
 }
 
 /** 카메라. 맵 가장자리에서는 더 밀지 않습니다 — 검은 띠가 보이지 않게. */
-export function camera(view, viewW, viewH) {
+export function camera(view: WorldView, viewW: number, viewH: number): { x: number; y: number } {
   const { player, map } = view;
   const cx = clamp(player.x - viewW / 2 + 0.5, 0, Math.max(0, map.w - viewW));
   const cy = clamp(player.y - viewH / 2 + 0.5, 0, Math.max(0, map.h - viewH));
   return { x: map.w <= viewW ? (map.w - viewW) / 2 : cx, y: map.h <= viewH ? (map.h - viewH) / 2 : cy };
 }
 
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));

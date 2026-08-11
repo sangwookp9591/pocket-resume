@@ -26,7 +26,11 @@ export type Face =
 
 /* ── 기술몬 ───────────────────────────────────────────────────── */
 
+/** Mon.base에 적히는 종족값 */
 export interface Stats { hp: number; atk: number; def: number; spd: number }
+
+/** 레벨을 먹인 실제 능력치. base의 hp가 여기서는 maxHp가 됩니다 */
+export interface ComputedStats { maxHp: number; atk: number; def: number; spd: number }
 
 export interface Mon {
   id: MonId;
@@ -87,7 +91,11 @@ export interface WikiChunk {
 
 /* ── 맵 ───────────────────────────────────────────────────────── */
 
+/** 맵 위의 워프 칸. x·y는 밟는 자리, tx·ty는 도착 자리입니다 */
 export interface Warp { x: number; y: number; to: MapId; tx: number; ty: number; dir?: Dir }
+
+/** 스크립트가 시키는 이동. 밟는 자리가 없으므로 도착 좌표만 있습니다 */
+export interface WarpTarget { to: MapId; tx: number; ty: number; dir?: Dir }
 export interface Npc { id: string; x: number; y: number; dir: Dir; sprite: string; script: string }
 
 export interface MapEvent {
@@ -149,7 +157,7 @@ export interface Cmd {
   require?: string;
   block?: true;
   heal?: true;
-  warp?: { to: MapId; x: number; y: number };
+  warp?: WarpTarget;
   scene?: 'hall' | 'credits';
   fx?: 'shake' | 'flash' | 'fade';
   wait?: number;
