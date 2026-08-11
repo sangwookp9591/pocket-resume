@@ -83,13 +83,13 @@ export default {
   time: 'morning',              // dawn | morning | noon | afternoon | dusk | night
   ground: `
     ................
-    ..░░░░░░░░░░░░..
-    ..░▓▓▓░░░░░░░░..
+    ..------------..
+    ..-%%%--------..
   `,
   over: `
     TTTTTTTTTTTTTTTT
     T..............T
-    T..HHH.........T
+    T..H...........T
   `,
   legend: { /* 문자 → 타일/오브젝트 id. 아래 표 참조 */ },
   warps:  [{ x: 5, y: 3, to: 'night-office', tx: 4, ty: 8 }],
@@ -106,10 +106,12 @@ export default {
 | 문자 | 타일 | 문자 | 타일 |
 |:-:|---|:-:|---|
 | `.` | 잔디 `grass` | `,` | 짙은 잔디 `grass-dark` |
-| `░` | 흙길 `path` | `▒` | 돌바닥 `stone` |
+| `-` | 흙길 `path` | `%` | 돌바닥 `stone` |
 | `~` | 물 `water` (애니 3프레임) | `s` | 모래 `sand` |
 | `f` | 실내 마루 `floor` | `c` | 카펫 `carpet` |
 | `=` | 다리 `bridge` | ` ` | 비움(검정) |
+
+> `~`(물)과 ` `(비움)은 ground 레이어지만 **통행 불가**입니다. 나머지 ground는 전부 통행 가능.
 
 `over` 레이어 — 위에 놓이는 것. **대문자는 충돌, 소문자는 통과**입니다. 예외 없습니다.
 
