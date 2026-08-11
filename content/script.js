@@ -74,6 +74,7 @@ export const SCRIPTS = {
   ],
 
   'lab.blockExit': [
+    { require: '!starterChosen' },
     { face: 'pout', who: '아잉 박사', t: '어이, 맨몸으로 나가려고?' },
     { who: '아잉 박사', t: '책상 위 볼부터 골라.' },
     { block: true },
@@ -114,6 +115,7 @@ export const SCRIPTS = {
   ],
 
   'newbie.gate': [
+    { require: '!badge.confidence' }, // 맵 이벤트의 unless와 같은 조건. 두 번 적는 게 아니라 이중 잠금입니다
     { face: 'neutral', who: '아잉', t: '아직 여기서 배울 게 남았어.' },
     { who: '아잉', t: '사무실에서 야근부터 끝내자.' },
     { block: true },
@@ -265,6 +267,7 @@ export const SCRIPTS = {
   ],
 
   'share.gate': [
+    { require: '!badge.insight' },
     { face: 'neutral', who: '아잉', t: '모닥불 쪽 이야기가 아직 안 끝났어.' },
     { block: true },
   ],
@@ -289,6 +292,7 @@ export const SCRIPTS = {
   ],
 
   'city.gate': [
+    { require: '!badge.connect' },
     { face: 'neutral', who: '아잉', t: '타워부터. 아직 연결 배지가 없어.' },
     { block: true },
   ],
