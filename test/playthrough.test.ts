@@ -212,10 +212,10 @@ test('맵마다 스폰 지점에서 워프 지점까지 갈 수 있다', () => {
     }
     for (const e of m.events ?? []) {
       if (e.type === 'trigger') {
-        assert.ok(seen.has(key(e.x, e.y)), `${id}: trigger "${e.script}"(${e.x},${e.y})를 밟을 수 없다`);
+        assert.ok(seen.has(key(e.x!, e.y!)), `${id}: trigger "${e.script}"(${e.x},${e.y})를 밟을 수 없다`);
       }
       if (e.type === 'interact') {
-        const near = [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => seen.has(key(e.x + dx, e.y + dy)));
+        const near = [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => seen.has(key(e.x! + dx!, e.y! + dy!)));
         assert.ok(near, `${id}: interact "${e.script}"(${e.x},${e.y})에 손이 닿지 않는다`);
       }
     }

@@ -3,9 +3,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRunner, interpolate, type Step } from '../lib/game/runner.ts';
-import type { Cmd, GameState } from '../content/types.ts';
+import type { BadgeId, Cmd, GameState } from '../content/types.ts';
+import { MONS } from '../content/mons.ts';
 import { createState, testAll } from '../lib/game/state.ts';
 import { SCRIPTS } from '../content/script.ts';
+
+/** Step 유니온에서 대사만. 매번 narrowing을 쓰면 테스트가 안 읽힙니다. */
+const t = (s: Step) => (s.kind === 'text' ? s.t : undefined);
+const face = (s: Step) => (s.kind === 'text' ? s.face : undefined);
+const who = (s: Step) => (s.kind === 'text' ? s.who : undefined);
 
 function run(cmds: Cmd[], init: GameState = createState()) {
   let state: GameState = init;
@@ -29,13 +35,13 @@ function drain(ctx: ReturnType<typeof run>, { pick = 0, name = '테스트', max 
 
 test('대사를 순서대로 낸다', () => {
   const c = run([{ t: '하나' }, { t: '둘' }]);
-  assert.equal(c.r.next().t, '하나');
-  assert.equal(c.r.next().t, '둘');
+  assert.equal(t(c.r.next()), '하나');
+  assert.equal(t(c.r.next()), '둘');
   assert.equal(c.r.next().kind, 'done');
 });
 
 test('{name}이 실제 이름으로 바뀐다', () => {
-  const s = { ...createState(), name: '상욱' };
+  const s: GameState = { ...createState(), name: '상욱' };
   assert.equal(interpolate('{name}은(는) 걸었다', s), '상욱은(는) 걸었다');
   assert.equal(interpolate('{name}', createState()), '너'); // 이름 없으면 기본값
 });
@@ -44,7 +50,7 @@ test('이름 입력이 상태에 들어가고 8자로 잘린다', () => {
   const c = run([{ input: 'name' }, { t: '{name}!' }]);
   const step = c.r.next();
   assert.equal(step.kind, 'input');
-  assert.equal(c.r.answer('name', '아주아주아주긴이름입니다').t, '아주아주아주긴이!');
+  assert.equal(t(c.r.answer('name', '아주아주아주긴이름입니다')), '아주아주아주긴이!');
 });
 
 test('빈 이름은 기본값이 된다 — 이름 없는 세이브가 생기지 않게', () => {
@@ -56,7 +62,7 @@ test('빈 이름은 기본값이 된다 — 이름 없는 세이브가 생기지
 
 test('set·badge·give가 상태를 바꾼다', () => {
   const c = run([{ set: 'flagA' }, { badge: 'confidence' }, { give: 'react' }, { t: '끝' }]);
-  assert.equal(c.r.next().t, '끝');
+  assert.equal(t(c.r.next()), '끝');
   assert.ok(c.state.flags.includes('flagA'));
   assert.ok(c.state.badges.includes('confidence'));
   assert.ok(c.state.dex.includes('react'));
@@ -71,21 +77,21 @@ test('require가 충족되지 않으면 조용히 끝난다', () => {
 });
 
 test('require가 충족되면 계속 간다', () => {
-  const init = { ...createState(), dex: ['spring'] };
+  const init: GameState = { ...createState(), dex: ['spring'] };
   const c = run([{ require: 'has.spring' }, { t: '통과' }], init);
-  assert.equal(c.r.next().t, '통과');
+  assert.equal(t(c.r.next()), '통과');
 });
 
 test('unless는 조건이 없을 때 말하고 멈춘다', () => {
   const c = run([{ unless: 'canChoose', t: '아직이다' }, { t: '여기까진 안 온다' }]);
-  assert.equal(c.r.next().t, '아직이다');
+  assert.equal(t(c.r.next()), '아직이다');
   assert.equal(c.r.next().kind, 'done');
 });
 
 test('unless는 조건이 이미 참이면 건너뛴다', () => {
   const init = { ...createState(), flags: ['canChoose'] };
   const c = run([{ unless: 'canChoose', t: '아직이다' }, { t: '통과' }], init);
-  assert.equal(c.r.next().t, '통과');
+  assert.equal(t(c.r.next()), '통과');
 });
 
 test('block이 나오면 blocked가 선다', () => {
@@ -105,18 +111,18 @@ test('선택지가 고른 가지의 명령을 이어 붙인다', () => {
   const step = c.r.next();
   assert.equal(step.kind, 'choose');
   assert.equal(step.options.length, 2);
-  assert.equal(c.r.pick(step, 0).t, 'A를 골랐다');
-  assert.equal(c.r.next().t, '공통 마무리');
+  assert.equal(t(c.r.pick(step, 0)), 'A를 골랐다');
+  assert.equal(t(c.r.next()), '공통 마무리');
   assert.ok(c.state.flags.includes('pickedA'));
 });
 
 test('face가 대사에 실려 나온다', () => {
   const c = run([{ face: 'cheer', who: '아잉', t: '야호' }, { t: '다음' }]);
   const a = c.r.next();
-  assert.equal(a.face, 'cheer');
-  assert.equal(a.who, '아잉');
+  assert.equal(face(a), 'cheer');
+  assert.equal(who(a), '아잉');
   // 다음 대사도 표정을 유지합니다 — 매 줄마다 다시 지정하지 않아도 되게
-  assert.equal(c.r.next().face, 'cheer');
+  assert.equal(face(c.r.next()), 'cheer');
 });
 
 test('모르는 명령은 던진다 — 조용히 버리면 나중에 대사가 사라진다', () => {
@@ -132,14 +138,12 @@ test('battle·scene·warp를 밖으로 낸다', () => {
 
 test('실제 스크립트 43개가 전부 끝까지 밟힌다 (선택지는 첫 가지)', () => {
   // 모든 조건을 채운 상태 — 그래야 require 뒤의 대사까지 들어갑니다.
-  const full = {
+  const full: GameState = {
     ...createState(),
     name: '상욱',
-    dex: ['spring', 'springboot', 'jpa', 'react', 'reactnative', 'aws', 'insight', 'ainews',
-      'nextjs', 'fsd', 'playwright', 'rbac', 'opensearch', 'resilience', 'outbox',
-      'archunit', 'vanilla', 'webgpu'],
+    dex: MONS.map((m) => m.id),
     flags: ['canChoose', 'starterChosen', 'aingJoined', 'canWork'],
-    badges: ['confidence', 'humility', 'insight', 'connect'],
+    badges: ['confidence', 'humility', 'insight', 'connect'] as BadgeId[],
   };
   for (const [name, cmds] of Object.entries(SCRIPTS)) {
     for (const pick of [0, 1]) {

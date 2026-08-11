@@ -19,10 +19,12 @@ export type MapId =
 export type Dir = 'up' | 'down' | 'left' | 'right';
 export type TimeOfDay = 'dawn' | 'morning' | 'noon' | 'afternoon' | 'dusk' | 'night';
 
-/** 아잉의 표정. 마스코트 킷의 16종과 같은 이름입니다. */
+/** 아잉의 표정·포즈. 마스코트 킷(expr 16 + pose 16)에서 실제로 쓰는 것만 추렸습니다. */
 export type Face =
   | 'neutral' | 'happy' | 'cheer' | 'proud' | 'wink' | 'wow' | 'love' | 'shy'
-  | 'thinking' | 'focused' | 'confused' | 'surprised' | 'sad' | 'pout' | 'relief' | 'sleepy';
+  | 'thinking' | 'focused' | 'confused' | 'surprised' | 'sad' | 'pout' | 'relief' | 'sleepy'
+  // 아래는 expr이 아니라 pose입니다 — 손을 흔들거나 앉는 장면에 씁니다.
+  | 'wave';
 
 /* ── 기술몬 ───────────────────────────────────────────────────── */
 

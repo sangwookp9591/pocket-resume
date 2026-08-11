@@ -2,7 +2,9 @@
    1~3번 회사는 본인 진술에서, 4번 회사(ZIVO)는 wiki.js의 커밋 분석 근거에서 왔습니다.
    근거 등급이 다르므로 `evidence` 필드로 구분해 둡니다 — 게임에서도 수치를 지어내지 않습니다. */
 
-export const JOURNEY = [
+import type { Badge, BadgeId, Chapter } from './types.ts';
+
+export const JOURNEY: Chapter[] = [
   {
     n: 1,
     id: 'newbie',
@@ -76,7 +78,7 @@ ArchUnit·codemod·에이전트 스킬 CLI는 전부 세 번째 회사에서 배
   },
 ];
 
-export const BADGES = {
+export const BADGES: Record<BadgeId, Badge> = {
   confidence: { name: '자신감 배지', hue: '#F2814F', from: '뉴비마을', got: '혼자서도 배울 수 있다는 것' },
   humility: { name: '겸손 배지', hue: '#A8DDF0', from: '파도항구', got: '져 봐야 아는 것' },
   insight: { name: '공유 배지', hue: '#7FA65C', from: '공유마을', got: '꺼내 놓아야 커지는 것' },

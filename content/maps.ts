@@ -2,8 +2,10 @@
    맵 에디터를 만들지 않기 위해 텍스트로 씁니다 — diff가 읽히는 것이 덤입니다.
    행 길이가 어긋나면 test/maps.test.js가 잡습니다. 눈으로 세지 마세요. */
 
+import type { Building, MapDef, MapId } from './types.ts';
+
 // 표에 없는 대문자 = 건물. 여덟 맵이 같은 글자를 씁니다.
-const BLD = {
+const BLD: Record<string, Building> = {
   A: { obj: 'bld-lab', w: 4, h: 3 },
   H: { obj: 'bld-house', w: 3, h: 2 },
   O: { obj: 'bld-office-1', w: 4, h: 3 },
@@ -14,7 +16,7 @@ const BLD = {
   Y: { obj: 'bld-gym', w: 4, h: 3 },
 };
 
-export const MAPS = {
+export const MAPS: Record<MapId, MapDef> = {
   // ── 0. 아잉 연구소 (실내) ────────────────────────────────────────
   lab: {
     id: 'lab',
@@ -480,7 +482,7 @@ RRRRRR....RRRRRR`,
   },
 };
 
-export const MAP_ORDER = [
+export const MAP_ORDER: MapId[] = [
   'lab',
   'newbie-town',
   'night-office',

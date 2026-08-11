@@ -2,7 +2,9 @@
    커밋 분석과 실제 이력에서만 옮겼습니다 — 지어낸 수치는 한 줄도 없습니다.
    LLM에는 이 글이 그대로 근거 문단으로 들어가고, 모델이 없을 때는 그대로 답이 됩니다. */
 
-export const WIKI = [
+import type { WikiChunk } from './types.ts';
+
+export const WIKI: WikiChunk[] = [
   {
     id: 'who',
     title: '박상욱 (iron) — 종합 프로필',
@@ -331,7 +333,7 @@ main에 병합되지 않은 작업(Carry 어드민)은 운영 중인 기능이 �
 // 라틴과 한글이 붙어 있으면 떼어 놓습니다. "ArchUnit을"을 한 토큰으로 두면 한글이
 // 섞였다는 이유로 라틴 2-gram(ar·rc·ch…)이 생기는데, 태그 쪽 "archunit"은 순수 라틴이라
 // 2-gram이 없어서 서로 영영 만나지 못합니다 — 조사 하나 붙였다고 검색이 통째로 빕니다.
-const norm = (s) => s.toLowerCase()
+const norm = (s: string) => s.toLowerCase()
   .replace(/([a-z0-9])([가-힣])/g, '$1 $2')
   .replace(/([가-힣])([a-z0-9])/g, '$1 $2')
   .replace(/[^a-z0-9가-힣]+/g, ' ')
@@ -339,7 +341,7 @@ const norm = (s) => s.toLowerCase()
 
 // ponytail: 형태소 분석기 대신 2-gram + 토큰 매칭. 한국어 조사("iron은", "권한을")가 붙어도
 // 2-gram이 뚫고 들어갑니다. 청크가 10개뿐이라 전체 스캔이 인덱스보다 쌉니다.
-const words = (s) => new Set(norm(s).split(' ').filter((w) => w.length > 1));
+const words = (s: string) => new Set(norm(s).split(' ').filter((w) => w.length > 1));
 
 // 어느 조각에나 나올 법한 서술어들. 이걸 안 빼면 "설계"가 어쩌다 한 제목에만 있다는
 // 이유로 희소어 취급을 받아, "쿠폰은 왜 새로 설계했어?"에 결제 조각이 1등을 합니다.
@@ -351,7 +353,7 @@ const STOP = new Set([
   '새로', '사람', '방식', '사용', '경우', '문제', '작업',
 ]);
 
-const grams = (s) => {
+const grams = (s: string) => {
   const out = words(s);
   // 2-gram은 제목·태그에만. 본문까지 넣으면 긴 청크가 우연한 음절 겹침으로 이기고,
   // "어떻게" 같은 기능어가 주제어와 같은 무게를 갖습니다.
@@ -372,7 +374,7 @@ const HAY = WIKI.map((w) => {
 
 // 문서 빈도. "iron", "커밋"처럼 거의 모든 조각에 나오는 말은 주제를 가르지 못하므로
 // 가중치를 나눠 떨어뜨립니다 — 안 하면 이름만 들어가도 소개 조각이 1등을 합니다.
-const DF = new Map();
+const DF = new Map<string, number>();
 for (const w of HAY) for (const g of w.hay) DF.set(g, (DF.get(g) ?? 0) + 1);
 
 const AVG_LEN = HAY.reduce((a, w) => a + w.hay.size, 0) / HAY.length;
@@ -382,17 +384,17 @@ const AVG_LEN = HAY.reduce((a, w) => a + w.hay.size, 0) / HAY.length;
 const NAME = /(iron|아이언|박상욱|상욱)/gi;
 
 /** 질문과 관련 있는 위키 조각을 점수순으로. 매칭이 하나도 없으면 빈 배열. */
-export function retrieve(query, k = 3) {
+export function retrieve(query: string, k = 3): WikiChunk[] {
   const stripped = query.replace(NAME, ' ').trim();
   return rank(stripped, k) ?? rank(query, k) ?? [];
 }
 
-function rank(query, k) {
+function rank(query: string, k: number): WikiChunk[] | null {
   const q = grams(query);
   if (!q.size) return null;
   const out = HAY.map((w) => {
     let s = 0;
-    for (const g of q) if (w.hay.has(g)) s += (w.tagHay.has(g) ? 5 : 1) / DF.get(g);
+    for (const g of q) if (w.hay.has(g)) s += (w.tagHay.has(g) ? 5 : 1) / DF.get(g)!;
     // 길이 정규화(BM25의 b항과 같은 꼴). 개요 조각은 온갖 말을 다 담고 있어서 안 나누면
     // "쿠폰"을 물어도 백엔드 개요가 1등을 하고, 제곱근으로 나누면 반대로 가장 짧은
     // 조각이 아무 질문에나 튀어나옵니다. 평균 길이 기준으로 완만하게만 눌러야 합니다.
@@ -409,7 +411,7 @@ function rank(query, k) {
 }
 
 /** 모델 없이도 답이 되는 폴백: 가장 가까운 조각을 그대로 인용합니다. */
-export function lookup(query) {
+export function lookup(query: string): string {
   const hits = retrieve(query, 2);
   if (!hits.length) {
     return '그 질문은 이 위키에 없네요. 이력·저장소·기술 스택·일하는 방식에 대해 물어보시면 답할 수 있습니다.';

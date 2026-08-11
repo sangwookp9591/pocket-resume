@@ -20,13 +20,14 @@
      { wait: 600 }                      밀리초 대기
 */
 
+import type { Choice, Cmd, MonId } from './types.ts';
 import { JOURNEY, FINALE } from './journey.ts';
 import { STARTERS, byId } from './mons.ts';
 
-const J = Object.fromEntries(JOURNEY.map((j) => [j.id, j]));
+const J = Object.fromEntries(JOURNEY.map((j) => [j.id, j])) as Record<string, (typeof JOURNEY)[number]>;
 
 /** 기술을 잡았을 때 공통으로 나오는 마무리. 도감 설명을 그대로 보여 줍니다. */
-const caught = (id, extra = []) => [
+const caught = (id: MonId, extra: Cmd[] = []): Cmd[] => [
   { fx: 'flash' },
   { t: `${byId[id].name}(을)를 잡았다!` },
   { face: 'cheer', who: '아잉', t: `${byId[id].en} — 도감에 올려 둘게.` },
@@ -34,7 +35,7 @@ const caught = (id, extra = []) => [
   ...extra,
 ];
 
-export const SCRIPTS = {
+export const SCRIPTS: Record<string, Cmd[]> = {
   // ══ 연구소 ══════════════════════════════════════════════════════
   'lab.open': [
     { fx: 'fade' },
@@ -53,7 +54,7 @@ export const SCRIPTS = {
     { unless: 'canChoose', t: '아직 박사가 이야기 중이다.' },
     { t: '세 개의 기술볼이 놓여 있다.' },
     {
-      choose: STARTERS.map((s) => ({
+      choose: STARTERS.map((s): Choice => ({
         label: s.name,
         desc: s.line,
         then: [
@@ -421,7 +422,7 @@ export const SCRIPTS = {
 };
 
 /** 배지 없이 잡을 수 있는 야생 기술의 인카운터 대사. 짧게. */
-export const WILD_LINES = {
+export const WILD_LINES: Partial<Record<MonId, string>> = {
   spring: '풀숲에서 스프링이 튀어나왔다!',
   reactnative: '야생의 알엔몬이 나타났다!',
   aws: '야생의 에이더블유에스가 나타났다!',

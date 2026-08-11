@@ -3,8 +3,10 @@
    `wiki` 필드가 근거 조각을 가리킵니다 — 게임을 위해 수치를 지어내지 않습니다.
    근거가 없는 칸은 비워 두고, 비어 있다는 사실을 도감이 그대로 보여줍니다. */
 
+import type { Mon, MonId, Starter, TypeId } from './types.ts';
+
 /** 타입은 속성이 아니라 **개발 도메인**입니다. 상성표는 아래 EFFECT. */
-export const TYPES = {
+export const TYPES: Record<TypeId, { name: string; color: string; ink: string }> = {
   FRONT: { name: '프론트', color: '#A8DDF0', ink: '#2E2A6B' },
   BACK: { name: '백엔드', color: '#7FA65C', ink: '#F4F1EA' },
   INFRA: { name: '인프라', color: '#E8A87C', ink: '#2E2A6B' },
@@ -15,7 +17,7 @@ export const TYPES = {
 
 /* 상성은 실제 개발의 인과를 옮긴 것입니다 —
    구조는 품질을 떠받치고, 품질은 인프라 사고를 줄이고, 팀은 구조를 정착시킵니다. */
-export const EFFECT = {
+export const EFFECT: Partial<Record<TypeId, Partial<Record<TypeId, number>>>> = {
   ARCH: { QUALITY: 2, TEAM: 0.5 },
   QUALITY: { INFRA: 2, ARCH: 0.5 },
   INFRA: { BACK: 2, QUALITY: 0.5 },
@@ -24,7 +26,7 @@ export const EFFECT = {
   TEAM: { ARCH: 2, FRONT: 0.5 },
 };
 
-export const MONS = [
+export const MONS: Mon[] = [
   // ── 1번 회사 · 뉴비마을 ──────────────────────────────────────────
   {
     id: 'spring',
@@ -289,7 +291,7 @@ export const MONS = [
 
 /** 오프닝에서 고르는 첫 언어 3종. 어느 것을 골라도 서사는 같습니다 —
     1번 회사가 시킨 것은 Spring 하나였다는 것이 사실이기 때문입니다. */
-export const STARTERS = [
+export const STARTERS: Starter[] = [
   {
     id: 'java',
     name: '자바',
@@ -313,5 +315,6 @@ export const STARTERS = [
   },
 ];
 
-export const byId = Object.fromEntries(MONS.map((m) => [m.id, m]));
-export const monsOf = (companyNo) => MONS.filter((m) => m.where === companyNo);
+// MONS의 id는 MonId 유니온이라 키가 전부 채워집니다 — test/content.test.ts가 번호 연속성까지 봅니다.
+export const byId = Object.fromEntries(MONS.map((m) => [m.id, m])) as Record<MonId, Mon>;
+export const monsOf = (companyNo: 1 | 2 | 3 | 4) => MONS.filter((m) => m.where === companyNo);

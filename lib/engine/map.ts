@@ -4,9 +4,32 @@
    조용히 빈 맵이 되는 것이 이 파일이 막아야 할 유일한 사고입니다. */
 
 import { TILE } from './config.ts';
+import type { Building, MapDef, MapEvent, MapId, Npc, TimeOfDay, Warp } from '../../content/types.ts';
+
+/** parseMap의 결과. 레이어는 문자 코드 그대로 담깁니다 — 문자가 곧 id입니다. */
+export interface ParsedMap {
+  id: MapId;
+  name: string;
+  time: TimeOfDay;
+  indoor: boolean;
+  w: number;
+  h: number;
+  /** 픽셀 크기. 카메라를 맵 안에 가두는 데 씁니다 */
+  pw: number;
+  ph: number;
+  ground: Uint8Array;
+  over: Uint8Array;
+  solid: Uint8Array;
+  spawn: MapDef['spawn'];
+  warps: Warp[];
+  npcs: Npc[];
+  encounters: MapDef['encounters'];
+  events: MapEvent[];
+  legend: Record<string, Building>;
+}
 
 /** ground 문자 → tilegen 타일 이름. ' '(비움)은 그리지 않습니다. */
-export const GROUND_TILE = {
+export const GROUND_TILE: Record<string, string | null> = {
   '.': 'grass',
   ',': 'grass-dark',
   '-': 'path',
@@ -20,7 +43,7 @@ export const GROUND_TILE = {
 };
 
 /** over 문자 → 오브젝트 에셋 id (계약 4.1 고정 범례). '.'은 없음. */
-export const OVER_OBJ = {
+export const OVER_OBJ: Record<string, string | null> = {
   '.': null,
   T: 'tree',
   t: 'tree-small',
@@ -47,9 +70,9 @@ export const SOLID_GROUND = new Set(['~', ' ']);
 /** 인카운터가 도는 칸. */
 export const ENCOUNTER_OVER = new Set(['g']);
 
-const strip = (s) => s.replace(/^\n/, '').replace(/\n+$/, '');
+const strip = (s: string) => s.replace(/^\n/, '').replace(/\n+$/, '');
 
-function toRows(src, layer, id) {
+function toRows(src: string, layer: string, id: string) {
   if (typeof src !== 'string') {
     throw new Error(`맵 "${id}": ${layer} 레이어가 문자열이 아닙니다 (${typeof src})`);
   }
@@ -66,7 +89,7 @@ function toRows(src, layer, id) {
  * @returns {{id,name,time,indoor,w,h,ground:Uint8Array,over:Uint8Array,solid:Uint8Array,
  *            spawn,warps,npcs,encounters,events,legend}}
  */
-export function parseMap(def) {
+export function parseMap(def: MapDef): ParsedMap {
   const id = def?.id ?? '(id 없음)';
   const legend = def?.legend ?? {};
 
@@ -79,7 +102,7 @@ export function parseMap(def) {
 
   const w = g[0].length;
   const h = g.length;
-  const bad = [];
+  const bad: string[] = [];
   g.forEach((r, y) => {
     if (r.length !== w) bad.push(`ground ${y}행: ${r.length}칸 (기대 ${w}칸) → "${r}"`);
   });
@@ -161,21 +184,21 @@ export function parseMap(def) {
   };
 }
 
-const inside = (m, x, y) => x >= 0 && y >= 0 && x < m.w && y < m.h;
+const inside = (m: ParsedMap, x: number, y: number) => x >= 0 && y >= 0 && x < m.w && y < m.h;
 
 /** 맵 밖은 막힌 것으로 봅니다 — 밖으로 걸어 나가지 않게. */
-export function isSolid(m, x, y) {
+export function isSolid(m: ParsedMap, x: number, y: number): boolean {
   return !inside(m, x, y) || m.solid[y * m.w + x] === 1;
 }
 
 /** (x,y)의 ground 타일 이름. 없으면 null. */
-export function tileAt(m, x, y) {
+export function tileAt(m: ParsedMap, x: number, y: number): string | null {
   if (!inside(m, x, y)) return null;
   return GROUND_TILE[String.fromCharCode(m.ground[y * m.w + x])] ?? null;
 }
 
 /** (x,y)의 over 오브젝트 id. legend 건물이면 legend의 obj. 없으면 null. */
-export function objAt(m, x, y) {
+export function objAt(m: ParsedMap, x: number, y: number): string | null {
   if (!inside(m, x, y)) return null;
   const ch = String.fromCharCode(m.over[y * m.w + x]);
   if (ch in OVER_OBJ) return OVER_OBJ[ch];
@@ -183,7 +206,7 @@ export function objAt(m, x, y) {
 }
 
 /** 풀숲인가 — 인카운터 판정용. */
-export function isEncounterTile(m, x, y) {
+export function isEncounterTile(m: ParsedMap, x: number, y: number): boolean {
   if (!inside(m, x, y)) return false;
   return ENCOUNTER_OVER.has(String.fromCharCode(m.over[y * m.w + x]));
 }

@@ -5,14 +5,15 @@ import assert from 'node:assert/strict';
 import { MAPS } from '../content/maps.ts';
 import { SCRIPTS } from '../content/script.ts';
 import { MONS, byId, STARTERS, TYPES, EFFECT } from '../content/mons.ts';
+import type { BadgeId, Cmd, MapId, MonId, TypeId } from '../content/types.ts';
 import { JOURNEY, BADGES } from '../content/journey.ts';
 
-const cmds = Object.values(SCRIPTS).flatMap((s) => s);
-const deep = (s) => s.flatMap((c) => (c.choose ? [c, ...c.choose.flatMap((o) => deep(o.then ?? []))] : [c]));
-const all = Object.values(SCRIPTS).flatMap((s) => deep(s));
+const cmds: Cmd[] = Object.values(SCRIPTS).flat();
+const deep = (s: Cmd[]): Cmd[] => s.flatMap((c) => (c.choose ? [c, ...c.choose.flatMap((o) => deep(o.then ?? []))] : [c]));
+const all: Cmd[] = Object.values(SCRIPTS).flatMap((s) => deep(s));
 
 test('맵이 참조하는 스크립트가 전부 있다', () => {
-  const refs = new Set();
+  const refs = new Set<string>();
   for (const m of Object.values(MAPS)) {
     for (const n of m.npcs ?? []) refs.add(n.script);
     for (const e of m.events ?? []) refs.add(e.script);
@@ -22,9 +23,9 @@ test('맵이 참조하는 스크립트가 전부 있다', () => {
 });
 
 test('스크립트가 참조하는 기술몬이 전부 실재한다', () => {
-  const bad = [];
+  const bad: string[] = [];
   for (const c of all) {
-    for (const id of [c.give, c.dex, c.battle?.mon].filter(Boolean)) {
+    for (const id of [c.give, c.dex, c.battle?.mon].filter((v): v is MonId => !!v)) {
       if (!byId[id]) bad.push(id);
     }
   }
@@ -32,13 +33,13 @@ test('스크립트가 참조하는 기술몬이 전부 실재한다', () => {
 });
 
 test('스크립트가 참조하는 배지가 전부 실재한다', () => {
-  const bad = all.map((c) => c.badge).filter(Boolean).filter((b) => !BADGES[b]);
+  const bad = all.map((c) => c.badge).filter((b): b is BadgeId => !!b).filter((b) => !BADGES[b]);
   assert.deepEqual(bad, [], `없는 배지: ${bad.join(', ')}`);
 });
 
 test('도감의 18종을 전부 얻을 수 있다', () => {
   // give(직접 지급) · battle.mon(잡을 수 있음) · 맵 인카운터 표 셋 중 하나에는 나와야 합니다.
-  const reachable = new Set();
+  const reachable = new Set<MonId>();
   for (const c of all) {
     if (c.give) reachable.add(c.give);
     if (c.battle?.mon && c.battle.scripted !== 'lose') reachable.add(c.battle.mon);
@@ -68,19 +69,19 @@ test('journey의 gets가 전부 실재하고, 회사 번호가 맞다', () => {
     assert.ok(MAPS[j.map], `${j.id}: 없는 맵 ${j.map}`);
   }
   // 반대 방향도. mons에만 있고 journey에 안 적힌 것이 없어야 합니다.
-  const listed = new Set(JOURNEY.flatMap((j) => j.gets));
+  const listed = new Set<MonId>(JOURNEY.flatMap((j) => j.gets));
   const orphan = MONS.map((m) => m.id).filter((id) => !listed.has(id));
   assert.deepEqual(orphan, [], `journey에 안 적힌 기술몬: ${orphan.join(', ')}`);
 });
 
 test('기술몬의 타입과 상성표가 닫혀 있다', () => {
   for (const m of MONS) assert.ok(TYPES[m.type], `${m.name}: 없는 타입 ${m.type}`);
-  for (const [from, tbl] of Object.entries(EFFECT)) {
+  for (const [from, tbl] of Object.entries(EFFECT) as Array<[TypeId, Record<TypeId, number>]>) {
     assert.ok(TYPES[from], `상성표에 없는 타입 ${from}`);
-    for (const to of Object.keys(tbl)) assert.ok(TYPES[to], `상성표 ${from}→${to}: 없는 타입`);
+    for (const to of Object.keys(tbl) as TypeId[]) assert.ok(TYPES[to], `상성표 ${from}→${to}: 없는 타입`);
   }
   // 모든 타입이 상성표에 나와야 합니다 — 빠지면 그 타입만 항상 등배가 됩니다.
-  for (const t of Object.keys(TYPES)) assert.ok(EFFECT[t], `${t}: 상성표에 공격 항목이 없음`);
+  for (const t of Object.keys(TYPES) as TypeId[]) assert.ok(EFFECT[t], `${t}: 상성표에 공격 항목이 없음`);
 });
 
 test('스타터가 가리키는 기술몬이 실재한다', () => {
@@ -95,7 +96,7 @@ test('도감 번호가 1부터 빠짐없이 이어진다', () => {
 test('배틀 배경 번호가 1~5 범위다', () => {
   for (const c of all) {
     if (!c.battle) continue;
-    assert.ok(c.battle.bg >= 1 && c.battle.bg <= 5, `배경 번호 ${c.battle.bg}`);
+    assert.ok((c.battle.bg ?? 1) >= 1 && (c.battle.bg ?? 1) <= 5, `배경 번호 ${c.battle.bg}`);
   }
 });
 
@@ -103,7 +104,7 @@ test('모든 대사가 비어 있지 않다 (unless 가드는 예외)', () => {
   for (const [name, s] of Object.entries(SCRIPTS)) {
     for (const c of deep(s)) {
       if (c.t === '' && c.unless) continue; // 조건 가드용 빈 줄
-      if ('t' in c) assert.ok(c.t.length > 0, `${name}: 빈 대사`);
+      if ('t' in c) assert.ok((c.t ?? '').length > 0, `${name}: 빈 대사`);
     }
   }
 });
